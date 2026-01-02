@@ -5,6 +5,12 @@ export enum TransactionType {
   TRANSFER = 'TRANSFER'
 }
 
+export enum Frequency {
+  DAILY = 'DAILY',
+  WEEKLY = 'WEEKLY',
+  MONTHLY = 'MONTHLY'
+}
+
 export interface Category {
   id: string;
   name: string;
@@ -24,12 +30,26 @@ export interface Wallet {
 export interface Transaction {
   id: string;
   walletId: string;
-  toWalletId?: string; // Only for transfers
+  toWalletId?: string;
   amount: number;
   type: TransactionType;
-  categoryId?: string; // Optional for transfers
+  categoryId?: string;
   date: number; // timestamp
   note: string;
+}
+
+export interface Schedule {
+  id: string;
+  name: string;
+  amount: number;
+  type: TransactionType;
+  categoryId: string;
+  walletId: string;
+  frequency: Frequency;
+  dayOfMonth?: number; // 1-31
+  dayOfWeek?: number; // 0-6 (Sun-Sat)
+  nextRun: number; // timestamp
+  isActive: boolean;
 }
 
 export interface AppState {
@@ -37,4 +57,6 @@ export interface AppState {
   transactions: Transaction[];
   categories: Category[];
   walletTypes: string[];
+  schedules: Schedule[];
+  isDarkMode: boolean;
 }
