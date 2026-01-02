@@ -1,0 +1,77 @@
+
+import React from 'react';
+import { 
+  ShoppingCart, 
+  Fuel, 
+  MapPin, 
+  Utensils, 
+  Car, 
+  Wrench, 
+  Home, 
+  Zap, 
+  Gift, 
+  Briefcase, 
+  TrendingUp, 
+  CreditCard, 
+  Coffee, 
+  Bus, 
+  ShoppingBag, 
+  HeartPulse, 
+  Laptop, 
+  Gamepad2, 
+  Plane,
+  Coins,
+  Wallet as WalletIcon,
+  Landmark,
+  Smartphone,
+  Globe,
+  ArrowRightLeft
+} from 'lucide-react';
+import { TransactionType, Category } from './types';
+
+export const ICON_MAP: Record<string, React.ReactNode> = {
+  grocery: <ShoppingCart size={20} />,
+  fuel: <Fuel size={20} />,
+  parking: <MapPin size={20} />,
+  food: <Utensils size={20} />,
+  toll: <Bus size={20} />,
+  car_service: <Wrench size={20} />,
+  rent: <Home size={20} />,
+  utilities: <Zap size={20} />,
+  gift: <Gift size={20} />,
+  salary: <Briefcase size={20} />,
+  investment: <TrendingUp size={20} />,
+  coffee: <Coffee size={20} />,
+  shopping: <ShoppingBag size={20} />,
+  health: <HeartPulse size={20} />,
+  electronics: <Laptop size={20} />,
+  gaming: <Gamepad2 size={20} />,
+  travel: <Plane size={20} />,
+  income: <TrendingUp size={20} />,
+  others: <Coins size={20} />,
+  bank: <Landmark size={20} />,
+  ewallet: <Smartphone size={20} />,
+  global: <Globe size={20} />,
+  transfer: <ArrowRightLeft size={20} />
+};
+
+export const DEFAULT_CATEGORIES: Category[] = [
+  { id: 'cat-income', name: 'Income', iconName: 'salary', color: '#10b981', type: TransactionType.INCOME },
+  { id: 'cat-grocery', name: 'Grocery', iconName: 'grocery', color: '#3b82f6', type: TransactionType.EXPENSE },
+  { id: 'cat-fuel', name: 'Fuel', iconName: 'fuel', color: '#f59e0b', type: TransactionType.EXPENSE },
+  { id: 'cat-parking', name: 'Parking', iconName: 'parking', color: '#6b7280', type: TransactionType.EXPENSE },
+  { id: 'cat-food', name: 'Food', iconName: 'food', color: '#ef4444', type: TransactionType.EXPENSE },
+  { id: 'cat-toll', name: 'Toll', iconName: 'toll', color: '#8b5cf6', type: TransactionType.EXPENSE },
+  { id: 'cat-carservice', name: 'Car Service', iconName: 'car_service', color: '#4b5563', type: TransactionType.EXPENSE },
+  { id: 'cat-coffee', name: 'Coffee', iconName: 'coffee', color: '#d97706', type: TransactionType.EXPENSE },
+];
+
+export const WALLET_TYPES = [
+  { name: 'Bank Account', icon: 'bank' },
+  { name: 'Touch & Go E-Wallet', icon: 'ewallet' },
+  { name: 'Touch & Go Card (NFC)', icon: 'ewallet' },
+  { name: 'Wise Account', icon: 'global' },
+  { name: 'Cash / Wallet', icon: 'others' },
+  { name: 'Credit Card', icon: 'bank' },
+  { name: 'Investment Account', icon: 'income' },
+];
