@@ -29,7 +29,8 @@ export const storage = {
         'ShopeePay',
         'GrabPay'
       ],
-      isDarkMode: false
+      isDarkMode: false,
+      hideAmounts: false
     };
 
     if (!data) return defaultState;
@@ -43,6 +44,7 @@ export const storage = {
         transactions: Array.isArray(parsed.transactions) ? parsed.transactions : defaultState.transactions,
         schedules: Array.isArray(parsed.schedules) ? parsed.schedules : defaultState.schedules,
         categories: Array.isArray(parsed.categories) ? parsed.categories : defaultState.categories,
+        hideAmounts: typeof parsed.hideAmounts === 'boolean' ? parsed.hideAmounts : false,
       };
     } catch (e) {
       return defaultState;

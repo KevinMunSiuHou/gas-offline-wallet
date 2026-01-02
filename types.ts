@@ -59,4 +59,5 @@ export interface AppState {
   walletTypes: string[];
   schedules: Schedule[];
   isDarkMode: boolean;
+  hideAmounts: boolean;
 }

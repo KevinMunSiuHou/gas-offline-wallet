@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { Home, PieChart, Plus, Settings, Wallet as WalletIcon, ArrowLeft, Search, ArrowRightLeft, Clock, Download, Upload, ShieldCheck, Loader2, CheckCircle2, Moon, Sun, AlertCircle, RefreshCw, Filter, ArrowUpDown, Tag, CalendarClock } from 'lucide-react';
+import { Home, PieChart, Plus, Settings, Wallet as WalletIcon, ArrowLeft, Search, ArrowRightLeft, Clock, Download, Upload, ShieldCheck, Loader2, CheckCircle2, Moon, Sun, AlertCircle, RefreshCw, Filter, ArrowUpDown, Tag, CalendarClock, Eye, EyeOff } from 'lucide-react';
 import { AppState, Wallet, Transaction, Category, TransactionType, Schedule, Frequency } from './types';
 import { storage } from './services/storage';
 import { MainDashboard } from './components/MainDashboard';
@@ -128,6 +128,10 @@ const App: React.FC = () => {
 
   const toggleDarkMode = () => {
     setState(prev => ({ ...prev, isDarkMode: !prev.isDarkMode }));
+  };
+
+  const toggleHideAmounts = () => {
+    setState(prev => ({ ...prev, hideAmounts: !prev.hideAmounts }));
   };
 
   const updateWalletTypes = useCallback((newType: string) => {
@@ -363,6 +367,8 @@ const App: React.FC = () => {
             onEditTransaction={(tx) => { setEditingTransaction(tx); setIsTxModalOpen(true); }}
             onSeeAll={() => setActiveTab('history')}
             isDarkMode={state.isDarkMode}
+            hideAmounts={state.hideAmounts}
+            onToggleHideAmounts={toggleHideAmounts}
           />
         )}
 
@@ -434,7 +440,7 @@ const App: React.FC = () => {
                           tx.type === TransactionType.EXPENSE ? 'text-red-500' : 
                           tx.type === TransactionType.INCOME ? 'text-emerald-500' : (state.isDarkMode ? 'text-slate-100' : 'text-slate-900')
                         }`}>
-                          {tx.type === TransactionType.EXPENSE ? '-' : tx.type === TransactionType.INCOME ? '+' : ''} RM {tx.amount.toFixed(2)}
+                          {state.hideAmounts ? 'RM ••••' : `${tx.type === TransactionType.EXPENSE ? '-' : tx.type === TransactionType.INCOME ? '+' : ''} RM ${tx.amount.toFixed(2)}`}
                         </p>
                         <p className="text-[9px] text-slate-400 font-bold">{new Date(tx.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                       </div>
@@ -446,7 +452,7 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {activeTab === 'analytics' && <Analytics transactions={state.transactions} categories={state.categories} isDarkMode={state.isDarkMode} />}
+        {activeTab === 'analytics' && <Analytics transactions={state.transactions} categories={state.categories} isDarkMode={state.isDarkMode} hideAmounts={state.hideAmounts} />}
         
         {activeTab === 'schedules' && (
           <ScheduleManager 
@@ -491,6 +497,21 @@ const App: React.FC = () => {
                  <div className="flex items-center gap-4">
                    <div className="p-2.5 bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-xl"><CalendarClock size={22} /></div>
                    <span className="font-bold text-slate-900 dark:text-slate-100">Recurring Schedules</span>
+                 </div>
+               </button>
+             </div>
+
+             <div className="space-y-4">
+               <h3 className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em] px-1">Privacy</h3>
+               <button onClick={toggleHideAmounts} className="w-full flex items-center justify-between p-4 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm transition-all active:scale-95">
+                 <div className="flex items-center gap-4">
+                   <div className={`p-2.5 rounded-xl ${state.hideAmounts ? 'bg-amber-50 dark:bg-amber-900/30 text-amber-600' : 'bg-blue-50 dark:bg-blue-900/30 text-blue-600'}`}>
+                     {state.hideAmounts ? <EyeOff size={22} /> : <Eye size={22} />}
+                   </div>
+                   <span className="font-bold text-slate-900 dark:text-slate-100">Hide Balances</span>
+                 </div>
+                 <div className={`w-12 h-6 rounded-full relative transition-colors duration-300 ${state.hideAmounts ? 'bg-blue-600' : 'bg-slate-200'}`}>
+                    <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all duration-300 shadow-sm ${state.hideAmounts ? 'left-7' : 'left-1'}`} />
                  </div>
                </button>
              </div>

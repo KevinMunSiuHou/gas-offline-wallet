@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { X, Trash2, AlertTriangle, Calendar } from 'lucide-react';
+import { X, Trash2, AlertTriangle, Calendar, ChevronDown, Wallet as WalletIcon } from 'lucide-react';
 import { Wallet, Category, TransactionType, Transaction } from '../types';
 import { ICON_MAP } from '../constants';
 
@@ -44,7 +44,6 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
       setToWalletId(initialTransaction.toWalletId || '');
       setCategoryId(initialTransaction.categoryId || '');
       setNote(initialTransaction.note);
-      // Format timestamp to local YYYY-MM-DD
       const localDate = new Date(initialTransaction.date);
       const yyyy = localDate.getFullYear();
       const mm = String(localDate.getMonth() + 1).padStart(2, '0');
@@ -70,7 +69,6 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
     if (type !== TransactionType.TRANSFER && !categoryId) return;
     if (type === TransactionType.TRANSFER && !toWalletId) return;
 
-    // Correct way to create a local date from YYYY-MM-DD input
     const [year, month, day] = date.split('-').map(Number);
     const selectedDate = new Date(year, month - 1, day);
     const now = new Date();
@@ -169,32 +167,38 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Wallet</label>
-                <select
-                  className={`w-full p-3 rounded-xl border-none outline-none focus:ring-2 focus:ring-blue-500 transition-all ${isDarkMode ? 'bg-slate-800 text-gray-100' : 'bg-gray-50 text-gray-800'}`}
-                  value={walletId}
-                  onChange={(e) => setWalletId(e.target.value)}
-                  required
-                >
-                  {wallets.map(w => (
-                    <option key={w.id} value={w.id}>{w.name}</option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <select
+                    className={`w-full p-3 rounded-xl border-none outline-none focus:ring-2 focus:ring-blue-500 transition-all appearance-none pr-10 font-bold ${isDarkMode ? 'bg-slate-800 text-gray-100' : 'bg-gray-50 text-gray-800'}`}
+                    value={walletId}
+                    onChange={(e) => setWalletId(e.target.value)}
+                    required
+                  >
+                    {wallets.map(w => (
+                      <option key={w.id} value={w.id}>{w.name}</option>
+                    ))}
+                  </select>
+                  <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" />
+                </div>
               </div>
             </div>
 
             {type === TransactionType.TRANSFER && (
               <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
                 <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">To Wallet</label>
-                <select
-                  className={`w-full p-3.5 rounded-xl border-none outline-none focus:ring-2 focus:ring-blue-500 transition-all ${isDarkMode ? 'bg-slate-800 text-gray-100' : 'bg-gray-50 text-gray-800'}`}
-                  value={toWalletId}
-                  onChange={(e) => setToWalletId(e.target.value)}
-                  required
-                >
-                  {wallets.filter(w => w.id !== walletId).map(w => (
-                    <option key={w.id} value={w.id}>{w.name}</option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <select
+                    className={`w-full p-3.5 rounded-xl border-none outline-none focus:ring-2 focus:ring-blue-500 transition-all appearance-none pr-10 font-bold ${isDarkMode ? 'bg-slate-800 text-gray-100' : 'bg-gray-50 text-gray-800'}`}
+                    value={toWalletId}
+                    onChange={(e) => setToWalletId(e.target.value)}
+                    required
+                  >
+                    {wallets.filter(w => w.id !== walletId).map(w => (
+                      <option key={w.id} value={w.id}>{w.name}</option>
+                    ))}
+                  </select>
+                  <ChevronDown size={18} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" />
+                </div>
               </div>
             )}
 

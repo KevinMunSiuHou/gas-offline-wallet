@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { X, Calendar, Clock, Repeat, Info } from 'lucide-react';
+import { X, Calendar, Clock, Repeat, Info, ChevronDown } from 'lucide-react';
 import { Wallet, Category, TransactionType, Schedule, Frequency } from '../types';
 
 interface ScheduleModalProps {
@@ -26,7 +26,6 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
   const [dayOfMonth, setDayOfMonth] = useState(new Date().getDate());
   const [dayOfWeek, setDayOfWeek] = useState(1);
 
-  // Effect to handle initial setup or editing
   useEffect(() => {
     if (initialSchedule) {
       setName(initialSchedule.name);
@@ -44,15 +43,12 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
       setWalletId(wallets[0].id);
       setFrequency(Frequency.MONTHLY);
       setDayOfMonth(new Date().getDate());
-      // Default to the first expense category
       const filtered = categories.filter(c => c.type === TransactionType.EXPENSE);
       if (filtered.length > 0) setCategoryId(filtered[0].id);
     }
   }, [isOpen, initialSchedule, wallets, categories]);
 
-  // CRITICAL: Effect to reset categoryId when the type (Income/Expense) changes
   useEffect(() => {
-    // Only auto-switch if we are creating new or if the current category doesn't match the selected type
     const currentCat = categories.find(c => c.id === categoryId);
     if (!currentCat || currentCat.type !== type) {
       const firstValid = categories.find(c => c.type === type);
@@ -68,7 +64,6 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
     e.preventDefault();
     if (!name || !amount || !walletId || !categoryId) return;
 
-    // Calculate initial nextRun if it's a new schedule OR if frequency/day changed
     let nextRun = initialSchedule?.nextRun || Date.now();
     
     const shouldRecalculate = !initialSchedule || 
@@ -173,15 +168,18 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Frequency</label>
-              <select 
-                className={`w-full p-3 rounded-xl border-none outline-none font-bold text-sm ${isDarkMode ? 'bg-slate-800 text-gray-100' : 'bg-gray-50'}`}
-                value={frequency}
-                onChange={(e) => setFrequency(e.target.value as Frequency)}
-              >
-                <option value={Frequency.DAILY}>Daily</option>
-                <option value={Frequency.WEEKLY}>Weekly</option>
-                <option value={Frequency.MONTHLY}>Monthly</option>
-              </select>
+              <div className="relative">
+                <select 
+                  className={`w-full p-3 rounded-xl border-none outline-none font-bold text-sm appearance-none pr-10 ${isDarkMode ? 'bg-slate-800 text-gray-100' : 'bg-gray-50'}`}
+                  value={frequency}
+                  onChange={(e) => setFrequency(e.target.value as Frequency)}
+                >
+                  <option value={Frequency.DAILY}>Daily</option>
+                  <option value={Frequency.WEEKLY}>Weekly</option>
+                  <option value={Frequency.MONTHLY}>Monthly</option>
+                </select>
+                <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" />
+              </div>
             </div>
             
             {frequency === Frequency.MONTHLY && (
@@ -199,19 +197,22 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
             {frequency === Frequency.WEEKLY && (
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Day of Week</label>
-                <select 
-                  className={`w-full p-3 rounded-xl border-none outline-none font-bold text-sm ${isDarkMode ? 'bg-slate-800 text-gray-100' : 'bg-gray-50'}`}
-                  value={dayOfWeek}
-                  onChange={(e) => setDayOfWeek(parseInt(e.target.value))}
-                >
-                  <option value={1}>Monday</option>
-                  <option value={2}>Tuesday</option>
-                  <option value={3}>Wednesday</option>
-                  <option value={4}>Thursday</option>
-                  <option value={5}>Friday</option>
-                  <option value={6}>Saturday</option>
-                  <option value={0}>Sunday</option>
-                </select>
+                <div className="relative">
+                  <select 
+                    className={`w-full p-3 rounded-xl border-none outline-none font-bold text-sm appearance-none pr-10 ${isDarkMode ? 'bg-slate-800 text-gray-100' : 'bg-gray-50'}`}
+                    value={dayOfWeek}
+                    onChange={(e) => setDayOfWeek(parseInt(e.target.value))}
+                  >
+                    <option value={1}>Monday</option>
+                    <option value={2}>Tuesday</option>
+                    <option value={3}>Wednesday</option>
+                    <option value={4}>Thursday</option>
+                    <option value={5}>Friday</option>
+                    <option value={6}>Saturday</option>
+                    <option value={0}>Sunday</option>
+                  </select>
+                  <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" />
+                </div>
               </div>
             )}
           </div>
@@ -228,23 +229,29 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Wallet</label>
-              <select 
-                className={`w-full p-3 rounded-xl border-none outline-none font-bold text-sm ${isDarkMode ? 'bg-slate-800 text-gray-100' : 'bg-gray-50'}`}
-                value={walletId}
-                onChange={(e) => setWalletId(e.target.value)}
-              >
-                {wallets.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
-              </select>
+              <div className="relative">
+                <select 
+                  className={`w-full p-3 rounded-xl border-none outline-none font-bold text-sm appearance-none pr-10 ${isDarkMode ? 'bg-slate-800 text-gray-100' : 'bg-gray-50'}`}
+                  value={walletId}
+                  onChange={(e) => setWalletId(e.target.value)}
+                >
+                  {wallets.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+                </select>
+                <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" />
+              </div>
             </div>
             <div className="space-y-2">
               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Category</label>
-              <select 
-                className={`w-full p-3 rounded-xl border-none outline-none font-bold text-sm ${isDarkMode ? 'bg-slate-800 text-gray-100' : 'bg-gray-50'}`}
-                value={categoryId}
-                onChange={(e) => setCategoryId(e.target.value)}
-              >
-                {filteredCategories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
+              <div className="relative">
+                <select 
+                  className={`w-full p-3 rounded-xl border-none outline-none font-bold text-sm appearance-none pr-10 ${isDarkMode ? 'bg-slate-800 text-gray-100' : 'bg-gray-50'}`}
+                  value={categoryId}
+                  onChange={(e) => setCategoryId(e.target.value)}
+                >
+                  {filteredCategories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+                <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" />
+              </div>
             </div>
           </div>
 

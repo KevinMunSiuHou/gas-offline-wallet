@@ -9,13 +9,16 @@ interface AnalyticsProps {
   transactions: Transaction[];
   categories: Category[];
   isDarkMode?: boolean;
+  hideAmounts?: boolean;
 }
 
-const CustomTooltip = ({ active, payload, label, isDarkMode }: any) => {
+const CustomTooltip = ({ active, payload, label, isDarkMode, hideAmounts }: any) => {
   if (active && payload && payload.length) {
     const expense = payload.find((p: any) => p.dataKey === 'expense')?.value || 0;
     const income = payload.find((p: any) => p.dataKey === 'income')?.value || 0;
     const topCat = payload[0]?.payload?.topCategory;
+
+    const formatVal = (val: number) => hideAmounts ? "••••" : `RM ${val.toFixed(2)}`;
 
     return (
       <div className={`p-4 rounded-2xl shadow-xl border min-w-[160px] ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'}`}>
@@ -23,11 +26,11 @@ const CustomTooltip = ({ active, payload, label, isDarkMode }: any) => {
         <div className="space-y-1.5">
           <div className="flex justify-between items-center gap-4">
             <span className="text-[10px] font-bold text-emerald-500">INCOME</span>
-            <span className={`text-sm font-black ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>RM {income.toFixed(2)}</span>
+            <span className={`text-sm font-black ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{formatVal(income)}</span>
           </div>
           <div className="flex justify-between items-center gap-4">
             <span className="text-[10px] font-bold text-blue-500">EXPENSE</span>
-            <span className={`text-sm font-black ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>RM {expense.toFixed(2)}</span>
+            <span className={`text-sm font-black ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{formatVal(expense)}</span>
           </div>
           {topCat && expense > 0 && (
             <div className={`mt-2 pt-2 border-t ${isDarkMode ? 'border-slate-700' : 'border-gray-50'}`}>
@@ -42,7 +45,7 @@ const CustomTooltip = ({ active, payload, label, isDarkMode }: any) => {
   return null;
 };
 
-export const Analytics: React.FC<AnalyticsProps> = ({ transactions, categories, isDarkMode }) => {
+export const Analytics: React.FC<AnalyticsProps> = ({ transactions, categories, isDarkMode, hideAmounts }) => {
   const [viewDate, setViewDate] = useState(new Date());
 
   const handlePrevMonth = () => {
@@ -68,7 +71,6 @@ export const Analytics: React.FC<AnalyticsProps> = ({ transactions, categories, 
   const currentYear = viewDate.getFullYear();
   const currentMonth = viewDate.getMonth();
 
-  // Generate a list of years for the dropdown (e.g., last 10 years and next 2)
   const years = useMemo(() => {
     const now = new Date().getFullYear();
     const result = [];
@@ -83,7 +85,6 @@ export const Analytics: React.FC<AnalyticsProps> = ({ transactions, categories, 
     'July', 'August', 'September', 'October', 'November', 'December'
   ];
 
-  // Filter transactions for the selected month using local date comparison
   const monthTransactions = useMemo(() => {
     const targetMonth = viewDate.getMonth();
     const targetYear = viewDate.getFullYear();
@@ -145,6 +146,16 @@ export const Analytics: React.FC<AnalyticsProps> = ({ transactions, categories, 
   const totalMonthlyIncome = incomeOnly.reduce((sum, t) => sum + t.amount, 0);
   const netFlow = totalMonthlyIncome - totalMonthlySpend;
 
+  const formatAmountValue = (val: number) => {
+    if (hideAmounts) return "••••";
+    return val.toLocaleString(undefined, { maximumFractionDigits: 0 });
+  };
+
+  const formatCurrencyValue = (val: number) => {
+    if (hideAmounts) return "RM ••••";
+    return `RM ${val.toFixed(2)}`;
+  };
+
   return (
     <div className="p-6 space-y-6 pb-40 overflow-x-hidden transition-colors">
       <div className="flex justify-between items-center">
@@ -160,7 +171,6 @@ export const Analytics: React.FC<AnalyticsProps> = ({ transactions, categories, 
         </button>
       </div>
 
-      {/* Improved Date Selector with Dropdowns */}
       <div className="flex items-center gap-2">
         <button 
           onClick={handlePrevMonth}
@@ -216,7 +226,7 @@ export const Analytics: React.FC<AnalyticsProps> = ({ transactions, categories, 
              <div className="absolute inset-0 flex flex-col items-center justify-center z-10 pointer-events-none">
                 <p className="text-[8px] sm:text-[9px] font-bold text-gray-400 leading-none mb-1 uppercase tracking-widest">Spent</p>
                 <p className="text-xs sm:text-sm font-black text-gray-900 dark:text-gray-100">
-                  RM {totalMonthlySpend > 9999 ? (totalMonthlySpend/1000).toFixed(1)+'k' : totalMonthlySpend.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                  {hideAmounts ? "••••" : `RM ${totalMonthlySpend > 9999 ? (totalMonthlySpend/1000).toFixed(1)+'k' : totalMonthlySpend.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
                 </p>
              </div>
              <ResponsiveContainer width="100%" height="100%">
@@ -246,12 +256,12 @@ export const Analytics: React.FC<AnalyticsProps> = ({ transactions, categories, 
           <div className="flex-1 space-y-4">
             <div className="pl-3 sm:pl-4 border-l-2 border-emerald-100 dark:border-emerald-900/40">
               <p className="text-[9px] sm:text-[10px] font-bold text-gray-400 uppercase tracking-wider">Income</p>
-              <p className="text-md sm:text-lg font-black text-emerald-500 truncate">RM {totalMonthlyIncome.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+              <p className="text-md sm:text-lg font-black text-emerald-500 truncate">RM {formatAmountValue(totalMonthlyIncome)}</p>
             </div>
             <div className={`pl-3 sm:pl-4 border-l-2 ${netFlow >= 0 ? 'border-blue-100 dark:border-blue-900/40' : 'border-red-100 dark:border-red-900/40'}`}>
               <p className="text-[9px] sm:text-[10px] font-bold text-gray-400 uppercase tracking-wider">Net Flow</p>
               <p className={`text-md sm:text-lg font-black truncate ${netFlow >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-red-500'}`}>
-                {netFlow >= 0 ? '+' : ''}RM {netFlow.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                {netFlow >= 0 ? '+' : ''}RM {formatAmountValue(netFlow)}
               </p>
             </div>
           </div>
@@ -283,7 +293,7 @@ export const Analytics: React.FC<AnalyticsProps> = ({ transactions, categories, 
                 ticks={['1', '10', '20', trendData.length.toString()]}
               />
               <YAxis hide domain={[0, 'auto']} />
-              <Tooltip content={<CustomTooltip isDarkMode={isDarkMode} />} cursor={{ stroke: isDarkMode ? '#334155' : '#e2e8f0', strokeWidth: 1 }} />
+              <Tooltip content={<CustomTooltip isDarkMode={isDarkMode} hideAmounts={hideAmounts} />} cursor={{ stroke: isDarkMode ? '#334155' : '#e2e8f0', strokeWidth: 1 }} />
               <Area 
                 type="monotone" 
                 dataKey="income" 
@@ -332,7 +342,7 @@ export const Analytics: React.FC<AnalyticsProps> = ({ transactions, categories, 
                     </div>
                   </div>
                 </div>
-                <p className="text-sm font-black text-gray-900 dark:text-gray-100">RM {item.value.toFixed(2)}</p>
+                <p className="text-sm font-black text-gray-900 dark:text-gray-100">{formatCurrencyValue(item.value)}</p>
               </div>
             ))
           )}

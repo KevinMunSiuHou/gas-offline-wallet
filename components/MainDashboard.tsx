@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Plus, Wallet as WalletIcon, ArrowRightLeft, Edit2 } from 'lucide-react';
+import { Plus, Wallet as WalletIcon, ArrowRightLeft, Edit2, Eye, EyeOff } from 'lucide-react';
 import { Wallet, Transaction, Category, TransactionType } from '../types';
 import { ICON_MAP } from '../constants';
 
@@ -13,6 +13,8 @@ interface MainDashboardProps {
   onEditTransaction: (tx: Transaction) => void;
   onSeeAll: () => void;
   isDarkMode?: boolean;
+  hideAmounts?: boolean;
+  onToggleHideAmounts?: () => void;
 }
 
 export const MainDashboard: React.FC<MainDashboardProps> = ({ 
@@ -23,11 +25,18 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({
   onEditWallet, 
   onEditTransaction,
   onSeeAll,
-  isDarkMode
+  isDarkMode,
+  hideAmounts,
+  onToggleHideAmounts
 }) => {
   const totalBalance = wallets.reduce((acc, curr) => acc + curr.balance, 0);
   const recentTransactions = [...transactions].sort((a, b) => b.date - a.date).slice(0, 5);
   const getWalletName = (id: string) => wallets.find(w => w.id === id)?.name || 'Deleted Wallet';
+
+  const formatAmount = (amount: number) => {
+    if (hideAmounts) return "••••••";
+    return amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
 
   return (
     <div className="p-6 space-y-8 pb-40">
@@ -36,8 +45,18 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({
           <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">ZenWallet</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400">Track your finances offline</p>
         </div>
-        <div className="h-10 w-10 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
-           <WalletIcon size={20} className="text-blue-600 dark:text-blue-400" />
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={onToggleHideAmounts}
+            className={`h-10 w-10 rounded-full flex items-center justify-center transition-all ${
+              isDarkMode ? 'bg-slate-800 text-slate-400' : 'bg-gray-100 text-slate-600'
+            }`}
+          >
+            {hideAmounts ? <EyeOff size={18} /> : <Eye size={18} />}
+          </button>
+          <div className="h-10 w-10 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
+             <WalletIcon size={20} className="text-blue-600 dark:text-blue-400" />
+          </div>
         </div>
       </div>
 
@@ -49,11 +68,13 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({
         <div className="absolute top-0 right-0 p-4 opacity-10 scale-150 rotate-12 group-hover:scale-125 transition-all">
           <WalletIcon size={120} />
         </div>
-        <p className="text-blue-100/70 dark:text-slate-400 text-sm font-medium tracking-widest uppercase mb-2">Total Net Worth</p>
+        <div className="flex items-center gap-2 mb-2">
+          <p className="text-blue-100/70 dark:text-slate-400 text-sm font-medium tracking-widest uppercase">Total Net Worth</p>
+        </div>
         <div className="flex items-baseline gap-2">
           <span className="text-xl font-medium text-blue-100/80 dark:text-slate-400">RM</span>
           <h2 className="text-4xl font-black tracking-tight">
-            {totalBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {formatAmount(totalBalance)}
           </h2>
         </div>
       </div>
@@ -88,7 +109,9 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({
                 </div>
                 <p className="text-slate-400 text-[10px] font-bold mb-1 truncate uppercase tracking-widest">{wallet.type}</p>
                 <h4 className="text-md font-bold text-slate-900 dark:text-slate-100 truncate mb-1">{wallet.name}</h4>
-                <p className="text-lg font-black text-slate-900 dark:text-slate-100">RM {wallet.balance.toFixed(2)}</p>
+                <p className="text-lg font-black text-slate-900 dark:text-slate-100">
+                  RM {hideAmounts ? "••••" : wallet.balance.toFixed(2)}
+                </p>
               </div>
             ))
           )}
@@ -135,7 +158,7 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({
                         tx.type === TransactionType.EXPENSE ? 'text-red-500' : 
                         tx.type === TransactionType.INCOME ? 'text-emerald-500' : (isDarkMode ? 'text-slate-100' : 'text-slate-900')
                       }`}>
-                        {tx.type === TransactionType.EXPENSE ? '-' : tx.type === TransactionType.INCOME ? '+' : ''} RM {tx.amount.toFixed(2)}
+                        {hideAmounts ? 'RM ••••' : `${tx.type === TransactionType.EXPENSE ? '-' : tx.type === TransactionType.INCOME ? '+' : ''} RM ${tx.amount.toFixed(2)}`}
                       </p>
                       <p className="text-[10px] text-slate-400">{new Date(tx.date).toLocaleDateString()}</p>
                     </div>

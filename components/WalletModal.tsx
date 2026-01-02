@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { X, Search, Trash2, AlertTriangle } from 'lucide-react';
+import { X, Search, Trash2, AlertTriangle, ChevronDown } from 'lucide-react';
 import { Wallet } from '../types';
 
 interface WalletModalProps {
@@ -99,12 +99,12 @@ export const WalletModal: React.FC<WalletModalProps> = ({
                   list="wallet-type-suggestions"
                   type="text"
                   placeholder="Bank Account..."
-                  className={`w-full p-3.5 rounded-xl border-none outline-none focus:ring-2 focus:ring-blue-500 transition-all pr-10 ${isDarkMode ? 'bg-slate-800 text-gray-100' : 'bg-gray-50 text-gray-800'}`}
+                  className={`w-full p-3.5 rounded-xl border-none outline-none focus:ring-2 focus:ring-blue-500 transition-all pr-10 font-bold ${isDarkMode ? 'bg-slate-800 text-gray-100' : 'bg-gray-50 text-gray-800'}`}
                   value={type}
                   onChange={(e) => setType(e.target.value)}
                   required
                 />
-                <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
                 <datalist id="wallet-type-suggestions">
                   {availableTypes.map(t => (
                     <option key={t} value={t} />
@@ -117,7 +117,7 @@ export const WalletModal: React.FC<WalletModalProps> = ({
               <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Name</label>
               <input
                 type="text"
-                className={`w-full p-3.5 rounded-xl border-none outline-none focus:ring-2 focus:ring-blue-500 transition-all ${isDarkMode ? 'bg-slate-800 text-gray-100' : 'bg-gray-50 text-gray-800'}`}
+                className={`w-full p-3.5 rounded-xl border-none outline-none focus:ring-2 focus:ring-blue-500 transition-all font-bold ${isDarkMode ? 'bg-slate-800 text-gray-100' : 'bg-gray-50 text-gray-800'}`}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
