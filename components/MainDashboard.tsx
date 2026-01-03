@@ -30,7 +30,7 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({
   onToggleHideAmounts
 }) => {
   const totalBalance = wallets.reduce((acc, curr) => acc + curr.balance, 0);
-  const recentTransactions = [...transactions].sort((a, b) => b.date - a.date).slice(0, 5);
+  const recentTransactions = [...transactions].sort((a, b) => b.date - a.date).slice(0, 10);
   const getWalletName = (id: string) => wallets.find(w => w.id === id)?.name || 'Deleted Wallet';
 
   const formatAmount = (amount: number) => {
@@ -39,135 +39,148 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({
   };
 
   return (
-    <div className="p-6 space-y-8 pb-40">
-      <div className="flex justify-between items-center">
+    <div className="p-4 sm:p-6 space-y-6 sm:space-y-8 pb-40">
+      {/* Header */}
+      <div className="flex justify-between items-center px-1">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">ZenWallet</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">Track your finances offline</p>
+          <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100">ZenWallet</h1>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mt-1">Personal Finance</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <button 
             onClick={onToggleHideAmounts}
-            className={`h-10 w-10 rounded-full flex items-center justify-center transition-all ${
-              isDarkMode ? 'bg-slate-800 text-slate-400' : 'bg-gray-100 text-slate-600'
+            className={`h-11 w-11 rounded-2xl flex items-center justify-center transition-all shadow-sm active:scale-90 ${
+              isDarkMode ? 'bg-slate-800 text-slate-400' : 'bg-white text-slate-600 border border-slate-100'
             }`}
           >
             {hideAmounts ? <EyeOff size={18} /> : <Eye size={18} />}
           </button>
-          <div className="h-10 w-10 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
-             <WalletIcon size={20} className="text-blue-600 dark:text-blue-400" />
-          </div>
+          {/* Functional Quick Add Shortcut */}
+          <button 
+            onClick={onAddWallet}
+            title="Add New Wallet"
+            className="h-11 w-11 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-600/20 active:scale-90 transition-all"
+          >
+             <WalletIcon size={18} className="text-white" />
+          </button>
         </div>
       </div>
 
-      <div className={`p-8 rounded-[2rem] text-white shadow-2xl relative overflow-hidden group transition-all duration-500 ${
+      {/* Net Worth Card */}
+      <div className={`p-8 rounded-[2.5rem] text-white shadow-2xl relative overflow-hidden group transition-all duration-500 ${
         isDarkMode 
         ? 'bg-gradient-to-br from-slate-900 via-slate-800 to-black' 
         : 'bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800'
       }`}>
-        <div className="absolute top-0 right-0 p-4 opacity-10 scale-150 rotate-12 group-hover:scale-125 transition-all">
+        <div className="absolute top-0 right-0 p-4 opacity-10 scale-150 rotate-12 pointer-events-none">
           <WalletIcon size={120} />
         </div>
-        <div className="flex items-center gap-2 mb-2">
-          <p className="text-blue-100/70 dark:text-slate-400 text-sm font-medium tracking-widest uppercase">Total Net Worth</p>
-        </div>
-        <div className="flex items-baseline gap-2">
-          <span className="text-xl font-medium text-blue-100/80 dark:text-slate-400">RM</span>
-          <h2 className="text-4xl font-black tracking-tight">
-            {formatAmount(totalBalance)}
-          </h2>
+        <div className="relative z-10">
+          <p className="text-blue-100/70 dark:text-slate-400 text-[10px] font-black tracking-widest uppercase mb-1">Total Net Worth</p>
+          <div className="flex items-baseline gap-2">
+            <span className="text-xl font-medium text-blue-100/80 dark:text-slate-400">RM</span>
+            <h2 className="text-4xl sm:text-5xl font-black tracking-tight truncate max-w-full">
+              {formatAmount(totalBalance)}
+            </h2>
+          </div>
         </div>
       </div>
 
-      <div className="space-y-4">
-        <div className="flex justify-between items-center px-1">
-          <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">My Wallets</h3>
-          <button onClick={onAddWallet} className="flex items-center gap-1 text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 py-1.5 px-3 rounded-full hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-all">
-            <Plus size={14} /> Add
-          </button>
-        </div>
+      {/* Adaptive Grid for Landscape Support */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 items-start">
         
-        <div className="flex gap-4 overflow-x-auto no-scrollbar pb-4 snap-x snap-mandatory px-1 -mx-1">
-          {wallets.length === 0 ? (
-            <div className="w-full p-8 bg-white dark:bg-slate-900 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800 text-center">
-              <p className="text-xs text-slate-400">No wallets added yet</p>
-            </div>
-          ) : (
-            wallets.map(wallet => (
-              <div 
-                key={wallet.id} 
-                className="relative min-w-[210px] max-w-[230px] p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-all group snap-start"
-              >
-                <button 
-                  onClick={() => onEditWallet(wallet)}
-                  className="absolute top-4 right-4 p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-all opacity-0 group-hover:opacity-100"
-                >
-                  <Edit2 size={14} />
-                </button>
-                <div className="w-10 h-10 rounded-2xl mb-4 flex items-center justify-center" style={{ backgroundColor: `${wallet.color}15`, color: wallet.color }}>
-                   <WalletIcon size={20} />
-                </div>
-                <p className="text-slate-400 text-[10px] font-bold mb-1 truncate uppercase tracking-widest">{wallet.type}</p>
-                <h4 className="text-md font-bold text-slate-900 dark:text-slate-100 truncate mb-1">{wallet.name}</h4>
-                <p className="text-lg font-black text-slate-900 dark:text-slate-100">
-                  RM {hideAmounts ? "••••" : wallet.balance.toFixed(2)}
-                </p>
+        {/* Wallets Section */}
+        <div className="space-y-4">
+          <div className="flex justify-between items-center px-1">
+            <h3 className="text-sm font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Wallets</h3>
+            <button onClick={onAddWallet} className="h-9 px-4 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 transition-all active:scale-95">
+              <Plus size={14} strokeWidth={3} /> Add
+            </button>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3">
+            {wallets.length === 0 ? (
+              <div className="p-8 bg-white dark:bg-slate-900 rounded-[2rem] border-2 border-dashed border-slate-100 dark:border-slate-800 text-center">
+                <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Add your first wallet</p>
               </div>
-            ))
-          )}
-          <div className="min-w-[10px] h-full" />
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        <div className="flex justify-between items-center px-1">
-          <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">Recent Transactions</h3>
-          <button onClick={onSeeAll} className="text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline">See All</button>
-        </div>
-        <div className="space-y-3">
-          {recentTransactions.length === 0 ? (
-            <div className="bg-white dark:bg-slate-900 p-12 rounded-[2rem] border border-dashed border-slate-200 dark:border-slate-800 text-center">
-              <p className="text-slate-400 text-sm font-medium">Your expenses will appear here.</p>
-            </div>
-          ) : (
-            recentTransactions.map(tx => {
-              const category = categories.find(c => c.id === tx.categoryId);
-              const isTransfer = tx.type === TransactionType.TRANSFER;
-
-              return (
-                <div key={tx.id} onClick={() => onEditTransaction(tx)} className="flex items-center justify-between p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-50 dark:border-slate-800 group hover:border-blue-100 dark:hover:border-blue-900 cursor-pointer transition-all shadow-sm">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ 
-                      backgroundColor: isTransfer ? (isDarkMode ? '#1e293b' : '#f3f4f6') : `${category?.color}15`, 
-                      color: isTransfer ? (isDarkMode ? '#94a3b8' : '#4b5563') : category?.color 
-                    }}>
-                      {isTransfer ? <ArrowRightLeft size={20} /> : (category ? ICON_MAP[category.iconName] : <WalletIcon size={20} />)}
+            ) : (
+              wallets.map(wallet => (
+                <div 
+                  key={wallet.id} 
+                  onClick={() => onEditWallet(wallet)}
+                  className="p-4 rounded-[1.5rem] bg-white dark:bg-slate-900 border border-slate-50 dark:border-slate-800 shadow-sm active:scale-[0.98] transition-all cursor-pointer group"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-inner" style={{ backgroundColor: `${wallet.color}15`, color: wallet.color }}>
+                        <WalletIcon size={18} />
+                      </div>
+                      <div>
+                        <p className="text-slate-400 text-[9px] font-black uppercase tracking-tighter leading-none mb-1">{wallet.type}</p>
+                        <h4 className="text-sm font-black text-slate-900 dark:text-slate-100 truncate w-32">{wallet.name}</h4>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                        {isTransfer ? 'Transfer' : (category?.name || 'Uncategorized')}
-                      </p>
-                      <p className="text-[10px] font-medium text-slate-500 uppercase tracking-tighter truncate max-w-[120px]">
-                        {isTransfer ? `${getWalletName(tx.walletId)} → ${getWalletName(tx.toWalletId!)}` : getWalletName(tx.walletId)}
+                    <div className="text-right">
+                      <p className="text-base font-black text-slate-900 dark:text-slate-100">
+                        {hideAmounts ? "••••" : `RM ${wallet.balance.toFixed(2)}`}
                       </p>
                     </div>
                   </div>
-                  <div className="text-right flex items-center gap-3">
-                    <div>
-                      <p className={`text-sm font-bold ${
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Activity Section */}
+        <div className="space-y-4">
+          <div className="flex justify-between items-center px-1">
+            <h3 className="text-sm font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Recent Activity</h3>
+            <button onClick={onSeeAll} className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest">See All</button>
+          </div>
+          <div className="space-y-2">
+            {recentTransactions.length === 0 ? (
+              <div className="p-12 bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 text-center flex flex-col items-center gap-3">
+                <ArrowRightLeft size={32} className="text-slate-100 dark:text-slate-800" />
+                <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">No history yet</p>
+              </div>
+            ) : (
+              recentTransactions.map(tx => {
+                const category = categories.find(c => c.id === tx.categoryId);
+                const isTransfer = tx.type === TransactionType.TRANSFER;
+
+                return (
+                  <div key={tx.id} onClick={() => onEditTransaction(tx)} className="flex items-center justify-between p-3.5 bg-white dark:bg-slate-900 rounded-[1.25rem] border border-slate-50 dark:border-slate-800 active:scale-[0.98] transition-all cursor-pointer shadow-sm">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ 
+                        backgroundColor: isTransfer ? (isDarkMode ? '#1e293b' : '#f3f4f6') : `${category?.color}15`, 
+                        color: isTransfer ? (isDarkMode ? '#94a3b8' : '#4b5563') : category?.color 
+                      }}>
+                        {isTransfer ? <ArrowRightLeft size={18} /> : (category ? ICON_MAP[category.iconName] : <WalletIcon size={18} />)}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-black text-slate-900 dark:text-slate-100 truncate">
+                          {isTransfer ? 'Transfer' : (category?.name || 'Uncategorized')}
+                        </p>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase truncate">
+                          {isTransfer ? `From ${getWalletName(tx.walletId)}` : getWalletName(tx.walletId)}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className={`text-sm font-black ${
                         tx.type === TransactionType.EXPENSE ? 'text-red-500' : 
                         tx.type === TransactionType.INCOME ? 'text-emerald-500' : (isDarkMode ? 'text-slate-100' : 'text-slate-900')
                       }`}>
                         {hideAmounts ? 'RM ••••' : `${tx.type === TransactionType.EXPENSE ? '-' : tx.type === TransactionType.INCOME ? '+' : ''} RM ${tx.amount.toFixed(2)}`}
                       </p>
-                      <p className="text-[10px] text-slate-400">{new Date(tx.date).toLocaleDateString()}</p>
+                      <p className="text-[9px] font-bold text-slate-300 uppercase">{new Date(tx.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}</p>
                     </div>
-                    <Edit2 size={12} className="text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
-                </div>
-              );
-            })
-          )}
+                );
+              })
+            )}
+          </div>
         </div>
       </div>
     </div>

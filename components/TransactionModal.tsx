@@ -66,162 +66,86 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!amount || !walletId) return;
-    if (type !== TransactionType.TRANSFER && !categoryId) return;
-    if (type === TransactionType.TRANSFER && !toWalletId) return;
-
-    const [year, month, day] = date.split('-').map(Number);
-    const selectedDate = new Date(year, month - 1, day);
-    const now = new Date();
-    selectedDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds());
-
     const data = {
       walletId,
       toWalletId: type === TransactionType.TRANSFER ? toWalletId : undefined,
       amount: parseFloat(amount),
       type,
       categoryId: type === TransactionType.TRANSFER ? undefined : categoryId,
-      date: selectedDate.getTime(),
+      date: new Date(date).getTime(),
       note
     };
-
-    if (initialTransaction) {
-      onUpdate({ ...data, id: initialTransaction.id });
-    } else {
-      onAdd(data);
-    }
-
+    initialTransaction ? onUpdate({ ...data, id: initialTransaction.id }) : onAdd(data);
     onClose();
   };
 
-  const handleDeleteClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!confirmDelete) {
-      setConfirmDelete(true);
-      setTimeout(() => setConfirmDelete(false), 3000); 
-    } else if (initialTransaction && onDelete) {
-      onDelete(initialTransaction.id);
-    }
+  const handleDelete = () => {
+    if (!confirmDelete) { setConfirmDelete(true); setTimeout(() => setConfirmDelete(false), 3000); }
+    else if (initialTransaction && onDelete) onDelete(initialTransaction.id);
   };
 
   const filteredCategories = categories.filter(c => c.type === type);
-  const inputBase = `w-full h-14 rounded-2xl border-2 border-transparent outline-none focus:ring-4 focus:ring-blue-500/10 transition-all font-black text-sm shadow-sm ${isDarkMode ? 'bg-slate-800 text-gray-100 focus:bg-slate-700' : 'bg-gray-50 text-gray-800 focus:bg-white focus:border-blue-100'}`;
+  const inputBase = `w-full h-14 rounded-2xl border-2 border-transparent outline-none transition-all font-bold text-sm shadow-sm ${isDarkMode ? 'bg-slate-800 text-white focus:bg-slate-700' : 'bg-slate-50 text-slate-800 focus:bg-white focus:border-blue-100'}`;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4 transition-all">
-      <div className={`w-full max-w-lg rounded-t-[2.5rem] sm:rounded-3xl shadow-2xl overflow-hidden animate-slide-up max-h-[92vh] flex flex-col transition-colors duration-300 ${isDarkMode ? 'bg-slate-900' : 'bg-white'}`}>
-        <div className={`sticky top-0 p-6 border-b flex justify-between items-center z-10 ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-gray-100'}`}>
-          <h2 className={`text-xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
-            {initialTransaction ? 'Edit Transaction' : 'New Transaction'}
-          </h2>
-          <button onClick={onClose} className={`p-2 rounded-full transition-colors ${isDarkMode ? 'hover:bg-slate-800' : 'hover:bg-gray-200'}`}>
-            <X size={24} className="text-gray-500" />
-          </button>
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-md p-0 sm:p-4 transition-all">
+      <div className={`w-full max-w-lg rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl overflow-hidden animate-slide-up max-h-[92vh] flex flex-col transition-colors ${isDarkMode ? 'bg-slate-900' : 'bg-white'}`}>
+        <div className={`p-6 border-b flex justify-between items-center z-10 ${isDarkMode ? 'border-slate-800' : 'border-slate-50'}`}>
+          <h2 className={`text-xl font-black ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{initialTransaction ? 'Edit Transaction' : 'New Record'}</h2>
+          <button onClick={onClose} className="p-2 text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-full"><X size={24} /></button>
         </div>
 
-        <div className="flex-1 overflow-y-auto no-scrollbar p-6">
+        <div className="flex-1 overflow-y-auto no-scrollbar p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className={`flex p-1 rounded-xl ${isDarkMode ? 'bg-slate-800' : 'bg-gray-100'}`}>
+            <div className={`flex p-1.5 rounded-2xl ${isDarkMode ? 'bg-slate-800' : 'bg-slate-50'}`}>
               {(Object.values(TransactionType) as TransactionType[]).map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => setType(t)}
-                  className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all ${
-                    type === t 
-                      ? (isDarkMode ? 'bg-slate-700 text-white shadow-sm' : 'bg-white text-gray-900 shadow-sm') 
-                      : 'text-gray-500'
-                  }`}
-                >
-                  {t.charAt(0) + t.slice(1).toLowerCase()}
+                <button key={t} type="button" onClick={() => setType(t)} className={`flex-1 py-2 rounded-xl text-[10px] font-black tracking-widest transition-all ${type === t ? (isDarkMode ? 'bg-slate-700 text-white shadow-sm' : 'bg-white text-slate-900 shadow-sm') : 'text-slate-400'}`}>
+                  {t}
                 </button>
               ))}
             </div>
 
-            <div className="relative group">
-              <span className="absolute left-5 top-1/2 -translate-y-1/2 text-2xl font-black text-gray-400">RM</span>
-              <input
-                autoFocus
-                type="number"
-                step="0.01"
-                placeholder="0.00"
-                className={`w-full pl-16 pr-6 h-20 text-4xl font-black border-2 border-transparent focus:ring-4 focus:ring-blue-500/10 rounded-2xl placeholder-gray-300 shadow-sm transition-all ${isDarkMode ? 'bg-slate-800 text-gray-100 focus:bg-slate-700' : 'bg-gray-50 text-gray-800 focus:bg-white focus:border-blue-100'}`}
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                required
-              />
+            <div className="relative">
+              <span className="absolute left-5 top-1/2 -translate-y-1/2 text-2xl font-black text-slate-300">RM</span>
+              <input autoFocus type="number" step="0.01" className={`w-full h-20 pl-16 pr-6 text-4xl font-black rounded-2xl border-2 border-transparent transition-all ${isDarkMode ? 'bg-slate-800 text-white focus:bg-slate-700' : 'bg-slate-50 text-slate-900 focus:bg-white focus:border-blue-100'}`} value={amount} onChange={e => setAmount(e.target.value)} required placeholder="0.00" />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Date</label>
-                <div className="relative group">
-                   <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none transition-colors group-focus-within:text-blue-500" size={18} />
-                   <input
-                    type="date"
-                    className={`${inputBase} pl-12`}
-                    value={date}
-                    onChange={(e) => setDate(e.target.value)}
-                    required
-                  />
-                </div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Date</label>
+                <input type="date" className={inputBase + " px-5"} value={date} onChange={e => setDate(e.target.value)} required />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Wallet</label>
-                <div className="relative group">
-                  <select
-                    className={`${inputBase} px-5 pr-12 appearance-none cursor-pointer`}
-                    value={walletId}
-                    onChange={(e) => setWalletId(e.target.value)}
-                    required
-                  >
-                    {wallets.map(w => (
-                      <option key={w.id} value={w.id}>{w.name}</option>
-                    ))}
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">From Wallet</label>
+                <div className="relative">
+                  <select className={inputBase + " px-5 pr-10 appearance-none"} value={walletId} onChange={e => setWalletId(e.target.value)} required>
+                    {wallets.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
                   </select>
-                  <ChevronDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" />
+                  <ChevronDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" />
                 </div>
               </div>
             </div>
 
             {type === TransactionType.TRANSFER && (
               <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">To Wallet</label>
-                <div className="relative group">
-                  <select
-                    className={`${inputBase} px-5 pr-12 appearance-none cursor-pointer`}
-                    value={toWalletId}
-                    onChange={(e) => setToWalletId(e.target.value)}
-                    required
-                  >
-                    {wallets.filter(w => w.id !== walletId).map(w => (
-                      <option key={w.id} value={w.id}>{w.name}</option>
-                    ))}
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">To Wallet</label>
+                <div className="relative">
+                  <select className={inputBase + " px-5 pr-10 appearance-none"} value={toWalletId} onChange={e => setToWalletId(e.target.value)} required>
+                    {wallets.filter(w => w.id !== walletId).map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
                   </select>
-                  <ChevronDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" />
+                  <ChevronDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" />
                 </div>
               </div>
             )}
 
             {type !== TransactionType.TRANSFER && (
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Category</label>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Category</label>
                 <div className="grid grid-cols-4 gap-2">
                   {filteredCategories.map(cat => (
-                    <button
-                      key={cat.id}
-                      type="button"
-                      onClick={() => setCategoryId(cat.id)}
-                      className={`flex flex-col items-center p-3 rounded-2xl transition-all border-2 ${
-                        categoryId === cat.id 
-                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-sm' 
-                          : (isDarkMode ? 'border-transparent bg-slate-800 hover:bg-slate-700' : 'border-transparent bg-gray-50 hover:bg-gray-100')
-                      }`}
-                    >
-                      <div className="p-2.5 rounded-full mb-1.5 transition-all" style={{ backgroundColor: categoryId === cat.id ? '#3b82f6' : (isDarkMode ? '#334155' : '#f3f4f6'), color: categoryId === cat.id ? 'white' : '#6b7280' }}>
-                        {ICON_MAP[cat.iconName]}
-                      </div>
-                      <span className={`text-[10px] font-black truncate w-full text-center ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>{cat.name}</span>
+                    <button key={cat.id} type="button" onClick={() => setCategoryId(cat.id)} className={`flex flex-col items-center p-3 rounded-2xl border-2 transition-all ${categoryId === cat.id ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20' : 'border-transparent bg-slate-50 dark:bg-slate-800'}`}>
+                      <div className="p-2 rounded-full mb-1" style={{ color: categoryId === cat.id ? '#2563eb' : '#94a3b8' }}>{ICON_MAP[cat.iconName]}</div>
+                      <span className="text-[8px] font-black truncate w-full text-center uppercase tracking-tighter">{cat.name}</span>
                     </button>
                   ))}
                 </div>
@@ -229,39 +153,18 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
             )}
 
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Note</label>
-              <input
-                type="text"
-                placeholder="Details..."
-                className={inputBase + " px-5"}
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-              />
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Note (Optional)</label>
+              <input type="text" className={inputBase + " px-5"} value={note} onChange={e => setNote(e.target.value)} placeholder="Lunch, Coffee, etc." />
             </div>
 
-            <button
-              type="submit"
-              className="w-full h-16 bg-blue-600 text-white rounded-2xl font-black text-lg shadow-xl shadow-blue-500/20 hover:bg-blue-700 transition-all active:scale-[0.98]"
-            >
-              {initialTransaction ? 'Update Transaction' : 'Save Record'}
-            </button>
+            <button type="submit" className="w-full h-16 bg-blue-600 text-white rounded-2xl font-black text-lg shadow-xl shadow-blue-600/20 active:scale-95 transition-all mt-4">{initialTransaction ? 'Update Record' : 'Save Transaction'}</button>
           </form>
 
           {initialTransaction && onDelete && (
-            <div className="mt-8 pt-6 border-t border-dashed border-slate-200 dark:border-slate-800">
-               <button
-                type="button"
-                onClick={handleDeleteClick}
-                className={`w-full h-14 rounded-2xl font-black flex items-center justify-center gap-3 transition-all active:scale-[0.98] border-2 shadow-sm ${
-                  confirmDelete 
-                  ? 'bg-red-600 border-red-600 text-white animate-pulse' 
-                  : 'bg-transparent border-red-100 dark:border-red-900/10 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10'
-                }`}
-              >
-                {confirmDelete ? <AlertTriangle size={20} /> : <Trash2 size={20} />}
-                <span>{confirmDelete ? 'Confirm Deletion' : 'Delete Record'}</span>
-              </button>
-            </div>
+            <button onClick={handleDelete} className={`w-full h-14 rounded-2xl font-black flex items-center justify-center gap-3 border-2 transition-all active:scale-95 mt-6 ${confirmDelete ? 'bg-red-600 border-red-600 text-white animate-pulse' : 'bg-transparent border-red-50 text-red-500 hover:bg-red-50 dark:border-red-900/10'}`}>
+              {confirmDelete ? <AlertTriangle size={18} /> : <Trash2 size={18} />}
+              <span>{confirmDelete ? 'Tap to Confirm' : 'Delete Record'}</span>
+            </button>
           )}
         </div>
       </div>
