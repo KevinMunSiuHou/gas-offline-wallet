@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { X, Calendar, Clock, Repeat, Info, ChevronDown } from 'lucide-react';
+import { X, Calendar, Clock, Repeat, Info, ChevronDown, CheckCircle2 } from 'lucide-react';
 import { Wallet, Category, TransactionType, Schedule, Frequency } from '../types';
 
 interface ScheduleModalProps {
@@ -246,8 +246,9 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
             </div>
           </div>
 
-          <button type="submit" className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black shadow-xl shadow-blue-500/20 active:scale-[0.98] transition-all">
-            {initialSchedule ? 'Update Schedule' : 'Start Automation'}
+          <button type="submit" className="w-full h-16 bg-blue-600 text-white rounded-2xl font-black text-lg flex items-center justify-center gap-2 shadow-xl shadow-blue-500/20 active:scale-[0.98] transition-all">
+            <CheckCircle2 size={20} />
+            <span>{initialSchedule ? 'Update Schedule' : 'Start Automation'}</span>
           </button>
         </form>
       </div>

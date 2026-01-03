@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { Home, PieChart, Plus, Settings, Wallet as WalletIcon, ArrowLeft, Search, ArrowRightLeft, Clock, Download, Upload, ShieldCheck, Loader2, CheckCircle2, Moon, Sun, AlertCircle, RefreshCw, Filter, ArrowUpDown, Tag, CalendarClock, Eye, EyeOff } from 'lucide-react';
+import { Home, PieChart, Plus, Settings, Wallet as WalletIcon, ArrowLeft, Search, ArrowRightLeft, Clock, Download, Upload, ShieldCheck, Loader2, CheckCircle2, Moon, Sun, AlertCircle, RefreshCw, Filter, ArrowUpDown, Tag, CalendarClock, Eye, EyeOff, X, Copy } from 'lucide-react';
 import { AppState, Wallet, Transaction, Category, TransactionType, Schedule, Frequency } from './types';
 import { storage } from './services/storage';
 import { MainDashboard } from './components/MainDashboard';
@@ -13,6 +13,12 @@ import { ScheduleManager } from './components/ScheduleManager';
 import { ICON_MAP } from './constants';
 
 type SortType = 'date-desc' | 'date-asc' | 'amount-desc' | 'amount-asc';
+
+interface HistoryFilter {
+  categoryId?: string;
+  month?: number;
+  year?: number;
+}
 
 const App: React.FC = () => {
   const [state, setState] = useState<AppState>(storage.load());
@@ -30,6 +36,7 @@ const App: React.FC = () => {
   const [editingSchedule, setEditingSchedule] = useState<Schedule | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortType, setSortType] = useState<SortType>('date-desc');
+  const [historyFilter, setHistoryFilter] = useState<HistoryFilter | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -280,6 +287,79 @@ const App: React.FC = () => {
     }
   };
 
+  const handleExportData = async () => {
+    const data = storage.load();
+    const jsonString = JSON.stringify(data, null, 2);
+    const dateStr = new Date().toISOString().split('T')[0];
+    const fileName = `zenwallet_backup_${dateStr}.json`;
+
+    if (navigator.share) {
+      try {
+        const file = new File([jsonString], fileName, { type: 'application/json' });
+        await navigator.share({
+          files: [file],
+          title: 'ZenWallet Backup Data',
+          text: `Financial backup from ${dateStr}`
+        });
+      } catch (err) {
+        if ((err as Error).name !== 'AbortError') {
+          // If sharing fails, attempt standard download
+          storage.exportData();
+        }
+      }
+    } else {
+      storage.exportData();
+    }
+  };
+
+  const filteredHistory = useMemo(() => {
+    return state.transactions
+      .filter(tx => {
+        const categoryName = state.categories.find(c => c.id === tx.categoryId)?.name || '';
+        
+        if (historyFilter) {
+          if (historyFilter.categoryId && tx.categoryId !== historyFilter.categoryId) return false;
+          if (historyFilter.month !== undefined && historyFilter.year !== undefined) {
+            const d = new Date(tx.date);
+            if (d.getMonth() !== historyFilter.month || d.getFullYear() !== historyFilter.year) return false;
+          }
+        }
+
+        const matchesSearch = tx.note.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                              categoryName.toLowerCase().includes(searchQuery.toLowerCase());
+        return matchesSearch;
+      })
+      .sort((a, b) => {
+        switch (sortType) {
+          case 'date-asc': return a.date - b.date;
+          case 'amount-desc': return b.amount - a.amount;
+          case 'amount-asc': return a.amount - b.amount;
+          case 'date-desc':
+          default: return b.date - a.date;
+        }
+      });
+  }, [state.transactions, searchQuery, sortType, state.categories, historyFilter]);
+
+  const toggleSort = () => {
+    const order: SortType[] = ['date-desc', 'date-asc', 'amount-desc', 'amount-asc'];
+    const nextIdx = (order.indexOf(sortType) + 1) % order.length;
+    setSortType(order[nextIdx]);
+  };
+
+  const getSortLabel = () => {
+    switch(sortType) {
+      case 'date-desc': return 'Newest';
+      case 'date-asc': return 'Oldest';
+      case 'amount-desc': return 'Highest';
+      case 'amount-asc': return 'Lowest';
+    }
+  };
+
+  const navigateToFilteredHistory = (catId: string, month: number, year: number) => {
+    setHistoryFilter({ categoryId: catId, month, year });
+    setActiveTab('history');
+  };
+
   const executeRestore = () => {
     if (!pendingRestoreData) return;
     setIsProcessing(true);
@@ -297,40 +377,6 @@ const App: React.FC = () => {
         alert('Restore Failed: ' + (err instanceof Error ? err.message : 'Storage error.'));
       }
     }, 400);
-  };
-
-  const filteredHistory = useMemo(() => {
-    return state.transactions
-      .filter(tx => {
-        const categoryName = state.categories.find(c => c.id === tx.categoryId)?.name || '';
-        const matchesSearch = tx.note.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                              categoryName.toLowerCase().includes(searchQuery.toLowerCase());
-        return matchesSearch;
-      })
-      .sort((a, b) => {
-        switch (sortType) {
-          case 'date-asc': return a.date - b.date;
-          case 'amount-desc': return b.amount - a.amount;
-          case 'amount-asc': return a.amount - b.amount;
-          case 'date-desc':
-          default: return b.date - a.date;
-        }
-      });
-  }, [state.transactions, searchQuery, sortType, state.categories]);
-
-  const toggleSort = () => {
-    const order: SortType[] = ['date-desc', 'date-asc', 'amount-desc', 'amount-asc'];
-    const nextIdx = (order.indexOf(sortType) + 1) % order.length;
-    setSortType(order[nextIdx]);
-  };
-
-  const getSortLabel = () => {
-    switch(sortType) {
-      case 'date-desc': return 'Newest';
-      case 'date-asc': return 'Oldest';
-      case 'amount-desc': return 'Highest';
-      case 'amount-asc': return 'Lowest';
-    }
   };
 
   return (
@@ -360,7 +406,6 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* Main Scrollable Content Area */}
       <div className="flex-1 scroll-container no-scrollbar relative min-h-0">
         {activeTab === 'home' && (
           <MainDashboard 
@@ -370,7 +415,7 @@ const App: React.FC = () => {
             onAddWallet={() => setIsWalletModalOpen(true)}
             onEditWallet={(w) => { setEditingWallet(w); setIsWalletModalOpen(true); }}
             onEditTransaction={(tx) => { setEditingTransaction(tx); setIsTxModalOpen(true); }}
-            onSeeAll={() => setActiveTab('history')}
+            onSeeAll={() => { setHistoryFilter(null); setActiveTab('history'); }}
             isDarkMode={state.isDarkMode}
             hideAmounts={state.hideAmounts}
             onToggleHideAmounts={toggleHideAmounts}
@@ -380,12 +425,30 @@ const App: React.FC = () => {
         {activeTab === 'history' && (
           <div className="p-6 space-y-4 pb-12">
             <div className="flex items-center gap-4">
-              <button onClick={() => setActiveTab('home')} className="p-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm text-slate-500 dark:text-slate-400 active:scale-95 transition-all">
+              <button onClick={() => { setHistoryFilter(null); setActiveTab('home'); }} className="p-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm text-slate-500 dark:text-slate-400 active:scale-95 transition-all">
                 <ArrowLeft size={20} />
               </button>
               <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100">History</h1>
             </div>
             
+            {historyFilter && (
+              <div className="bg-blue-600 p-4 rounded-2xl text-white flex items-center justify-between shadow-lg animate-in slide-in-from-top-2 duration-300">
+                <div className="flex items-center gap-3">
+                  <Tag size={18} className="opacity-70" />
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest opacity-70">Filtering Category</p>
+                    <p className="font-bold text-sm">
+                      {state.categories.find(c => c.id === historyFilter.categoryId)?.name || 'Filtered List'}
+                      <span className="opacity-60 font-medium ml-2">({new Date(historyFilter.year!, historyFilter.month!).toLocaleString('en-GB', { month: 'short', year: 'numeric' })})</span>
+                    </p>
+                  </div>
+                </div>
+                <button onClick={() => setHistoryFilter(null)} className="p-2 hover:bg-white/20 rounded-full transition-all">
+                  <X size={18} />
+                </button>
+              </div>
+            )}
+
             <div className="flex gap-2">
               <div className="flex-1 relative">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
@@ -457,7 +520,17 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {activeTab === 'analytics' && <div className="scroll-container no-scrollbar"><Analytics transactions={state.transactions} categories={state.categories} isDarkMode={state.isDarkMode} hideAmounts={state.hideAmounts} /></div>}
+        {activeTab === 'analytics' && (
+          <div className="scroll-container no-scrollbar">
+            <Analytics 
+              transactions={state.transactions} 
+              categories={state.categories} 
+              isDarkMode={state.isDarkMode} 
+              hideAmounts={state.hideAmounts}
+              onCategoryClick={(catId, m, y) => navigateToFilteredHistory(catId, m, y)}
+            />
+          </div>
+        )}
         
         {activeTab === 'schedules' && (
           <ScheduleManager 
@@ -553,9 +626,9 @@ const App: React.FC = () => {
                </div>
                <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm p-5 space-y-4">
                  <div className="grid grid-cols-1 gap-3">
-                   <button onClick={() => storage.exportData()} className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-all text-slate-700 dark:text-slate-200 font-black group">
+                   <button onClick={handleExportData} className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-all text-slate-700 dark:text-slate-200 font-black group">
                      <Download size={20} className="text-blue-600" />
-                     <span>Download Backup (.json)</span>
+                     <span>Export Backup (Recommended)</span>
                    </button>
                    <button onClick={() => fileInputRef.current?.click()} disabled={isProcessing} className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-all text-slate-700 dark:text-slate-200 font-black">
                      {isProcessing ? <Loader2 size={20} className="animate-spin" /> : <Upload size={20} className="text-purple-600" />}
@@ -569,7 +642,6 @@ const App: React.FC = () => {
         )}
       </div>
 
-      {/* Persistent Bottom Tab Bar */}
       <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl border-t border-slate-100 dark:border-slate-800 px-2 py-4 z-40 shrink-0">
         <div className="grid grid-cols-5 items-center">
           <button onClick={() => setActiveTab('home')} className={`flex flex-col items-center py-2 transition-all ${activeTab === 'home' ? 'text-blue-600 scale-110' : 'text-slate-400'}`}>
@@ -592,7 +664,6 @@ const App: React.FC = () => {
         </div>
       </div>
 
-      {/* Modals */}
       <TransactionModal isOpen={isTxModalOpen} onClose={() => { setIsTxModalOpen(false); setEditingTransaction(null); }} onAdd={handleAddTransaction} onUpdate={handleUpdateTransaction} onDelete={handleDeleteTransaction} initialTransaction={editingTransaction} wallets={calculatedWallets} categories={state.categories} isDarkMode={state.isDarkMode} />
       <WalletModal isOpen={isWalletModalOpen} onClose={() => { setIsWalletModalOpen(false); setEditingWallet(null); }} onAdd={handleAddWallet} onUpdate={handleUpdateWallet} onDelete={handleDeleteWallet} initialWallet={editingWallet} availableTypes={state.walletTypes} isDarkMode={state.isDarkMode} />
       <CategoryModal isOpen={isCategoryModalOpen} onClose={() => setIsCategoryModalOpen(false)} onAdd={handleAddCategory} isDarkMode={state.isDarkMode} />

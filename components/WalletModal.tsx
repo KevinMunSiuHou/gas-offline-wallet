@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { X, Trash2, AlertTriangle, ChevronDown } from 'lucide-react';
+import { X, Trash2, AlertTriangle, ChevronDown, CheckCircle2 } from 'lucide-react';
 import { Wallet } from '../types';
 
 interface WalletModalProps {
@@ -47,14 +47,18 @@ export const WalletModal: React.FC<WalletModalProps> = ({
     onClose();
   };
 
+  // Fix: Added missing handleDelete function to resolve the "Cannot find name 'handleDelete'" error.
   const handleDelete = () => {
-    if (!confirmDelete) { setConfirmDelete(true); setTimeout(() => setConfirmDelete(false), 3000); }
-    else if (initialWallet && onDelete) onDelete(initialWallet.id);
+    if (!confirmDelete) {
+      setConfirmDelete(true);
+      setTimeout(() => setConfirmDelete(false), 3000);
+    } else if (initialWallet && onDelete) {
+      onDelete(initialWallet.id);
+    }
   };
 
   const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#000000', '#ec4899', '#6366f1'];
   
-  // Standard h-14 for all inputs and consistent font weighting
   const inputCls = `w-full h-14 px-5 rounded-2xl border-2 border-transparent outline-none transition-all font-black text-sm shadow-sm ${isDarkMode ? 'bg-slate-800 text-white focus:bg-slate-700' : 'bg-slate-50 text-slate-800 focus:bg-white focus:border-blue-100'}`;
 
   return (
@@ -96,8 +100,9 @@ export const WalletModal: React.FC<WalletModalProps> = ({
               </div>
             </div>
             
-            <button type="submit" className="w-full h-15 bg-blue-600 text-white rounded-2xl font-black text-lg shadow-xl shadow-blue-600/20 active:scale-[0.97] transition-all mt-4">
-              {initialWallet ? 'Save Changes' : 'Create Wallet'}
+            <button type="submit" className="w-full h-16 bg-blue-600 text-white rounded-2xl font-black text-lg shadow-xl shadow-blue-600/20 active:scale-[0.97] transition-all mt-4 flex items-center justify-center gap-2">
+              <CheckCircle2 size={20} />
+              <span>{initialWallet ? 'Save Changes' : 'Create Wallet'}</span>
             </button>
           </form>
 

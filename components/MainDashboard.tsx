@@ -1,6 +1,6 @@
 
-import React from 'react';
-import { Plus, Wallet as WalletIcon, ArrowRightLeft, Edit2, Eye, EyeOff } from 'lucide-react';
+import React, { useState } from 'react';
+import { Plus, Wallet as WalletIcon, ArrowRightLeft, Eye, EyeOff, ChevronDown, ChevronUp } from 'lucide-react';
 import { Wallet, Transaction, Category, TransactionType } from '../types';
 import { ICON_MAP } from '../constants';
 
@@ -29,8 +29,15 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({
   hideAmounts,
   onToggleHideAmounts
 }) => {
+  const [isWalletsExpanded, setIsWalletsExpanded] = useState(false);
   const totalBalance = wallets.reduce((acc, curr) => acc + curr.balance, 0);
-  const recentTransactions = [...transactions].sort((a, b) => b.date - a.date).slice(0, 10);
+  
+  // Requirement: Show only latest 5 transactions
+  const recentTransactions = [...transactions].sort((a, b) => b.date - a.date).slice(0, 5);
+  
+  // Requirement: Show only 3 wallets by default with a toggle
+  const visibleWallets = isWalletsExpanded ? wallets : wallets.slice(0, 3);
+  
   const getWalletName = (id: string) => wallets.find(w => w.id === id)?.name || 'Deleted Wallet';
 
   const formatAmount = (amount: number) => {
@@ -55,7 +62,6 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({
           >
             {hideAmounts ? <EyeOff size={18} /> : <Eye size={18} />}
           </button>
-          {/* Functional Quick Add Shortcut */}
           <button 
             onClick={onAddWallet}
             title="Add New Wallet"
@@ -86,7 +92,6 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({
         </div>
       </div>
 
-      {/* Adaptive Grid for Landscape Support */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 items-start">
         
         {/* Wallets Section */}
@@ -98,36 +103,51 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({
             </button>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3">
+          <div className="grid grid-cols-1 gap-3">
             {wallets.length === 0 ? (
               <div className="p-8 bg-white dark:bg-slate-900 rounded-[2rem] border-2 border-dashed border-slate-100 dark:border-slate-800 text-center">
                 <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Add your first wallet</p>
               </div>
             ) : (
-              wallets.map(wallet => (
-                <div 
-                  key={wallet.id} 
-                  onClick={() => onEditWallet(wallet)}
-                  className="p-4 rounded-[1.5rem] bg-white dark:bg-slate-900 border border-slate-50 dark:border-slate-800 shadow-sm active:scale-[0.98] transition-all cursor-pointer group"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-inner" style={{ backgroundColor: `${wallet.color}15`, color: wallet.color }}>
-                        <WalletIcon size={18} />
+              <>
+                {visibleWallets.map(wallet => (
+                  <div 
+                    key={wallet.id} 
+                    onClick={() => onEditWallet(wallet)}
+                    className="p-4 rounded-[1.5rem] bg-white dark:bg-slate-900 border border-slate-50 dark:border-slate-800 shadow-sm active:scale-[0.98] transition-all cursor-pointer group"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-inner" style={{ backgroundColor: `${wallet.color}15`, color: wallet.color }}>
+                          <WalletIcon size={18} />
+                        </div>
+                        <div>
+                          <p className="text-slate-400 text-[9px] font-black uppercase tracking-tighter leading-none mb-1">{wallet.type}</p>
+                          <h4 className="text-sm font-black text-slate-900 dark:text-slate-100 truncate w-32">{wallet.name}</h4>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-slate-400 text-[9px] font-black uppercase tracking-tighter leading-none mb-1">{wallet.type}</p>
-                        <h4 className="text-sm font-black text-slate-900 dark:text-slate-100 truncate w-32">{wallet.name}</h4>
+                      <div className="text-right">
+                        <p className="text-base font-black text-slate-900 dark:text-slate-100">
+                          {hideAmounts ? "••••" : `RM ${wallet.balance.toFixed(2)}`}
+                        </p>
                       </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-base font-black text-slate-900 dark:text-slate-100">
-                        {hideAmounts ? "••••" : `RM ${wallet.balance.toFixed(2)}`}
-                      </p>
                     </div>
                   </div>
-                </div>
-              ))
+                ))}
+                
+                {wallets.length > 3 && (
+                  <button 
+                    onClick={() => setIsWalletsExpanded(!isWalletsExpanded)}
+                    className="w-full h-14 flex items-center justify-center gap-2 bg-white dark:bg-slate-900 rounded-[1.5rem] border border-slate-50 dark:border-slate-800 text-blue-600 dark:text-blue-400 text-xs font-black uppercase tracking-widest shadow-sm active:scale-[0.98] transition-all"
+                  >
+                    {isWalletsExpanded ? (
+                      <><ChevronUp size={16} strokeWidth={3} /> See Less</>
+                    ) : (
+                      <><ChevronDown size={16} strokeWidth={3} /> Show All ({wallets.length})</>
+                    )}
+                  </button>
+                )}
+              </>
             )}
           </div>
         </div>

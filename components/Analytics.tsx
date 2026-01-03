@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo } from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, Sector } from 'recharts';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, ChevronDown } from 'lucide-react';
 import { Transaction, Category, TransactionType } from '../types';
 import { ICON_MAP } from '../constants';
@@ -10,22 +10,23 @@ interface AnalyticsProps {
   categories: Category[];
   isDarkMode?: boolean;
   hideAmounts?: boolean;
+  onCategoryClick?: (catId: string, month: number, year: number) => void;
 }
 
 const CustomTooltip = ({ active, payload, label, isDarkMode, hideAmounts }: any) => {
   if (active && payload && payload.length) {
     const formatVal = (val: number) => hideAmounts ? "••••" : `RM ${val.toFixed(2)}`;
     return (
-      <div className={`p-3 rounded-2xl shadow-xl border min-w-[140px] ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'}`}>
-        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 border-b pb-1">Day {label}</p>
+      <div className={`p-3 rounded-2xl shadow-xl border min-w-[140px] pointer-events-none select-none animate-in fade-in zoom-in duration-150 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'}`}>
+        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 border-b pb-1 leading-none">Day {label}</p>
         <div className="space-y-1">
           <div className="flex justify-between items-center gap-4">
-            <span className="text-[9px] font-black text-emerald-500">INCOME</span>
-            <span className={`text-xs font-black ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{formatVal(payload.find((p: any) => p.dataKey === 'income')?.value || 0)}</span>
+            <span className="text-[9px] font-black text-emerald-500 leading-none">INCOME</span>
+            <span className={`text-xs font-black ${isDarkMode ? 'text-gray-100' : 'text-gray-900'} leading-none`}>{formatVal(payload.find((p: any) => p.dataKey === 'income')?.value || 0)}</span>
           </div>
           <div className="flex justify-between items-center gap-4">
-            <span className="text-[9px] font-black text-blue-500">EXPENSE</span>
-            <span className={`text-xs font-black ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{formatVal(payload.find((p: any) => p.dataKey === 'expense')?.value || 0)}</span>
+            <span className="text-[9px] font-black text-blue-500 leading-none">EXPENSE</span>
+            <span className={`text-xs font-black ${isDarkMode ? 'text-gray-100' : 'text-gray-900'} leading-none`}>{formatVal(payload.find((p: any) => p.dataKey === 'expense')?.value || 0)}</span>
           </div>
         </div>
       </div>
@@ -34,8 +35,41 @@ const CustomTooltip = ({ active, payload, label, isDarkMode, hideAmounts }: any)
   return null;
 };
 
-export const Analytics: React.FC<AnalyticsProps> = ({ transactions, categories, isDarkMode, hideAmounts }) => {
+const PieTooltip = ({ active, payload, isDarkMode, hideAmounts }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    return (
+      <div className={`p-3 rounded-2xl shadow-2xl border pointer-events-none select-none animate-in fade-in zoom-in duration-150 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'}`}>
+        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none">{data.name}</p>
+        <p className={`text-sm font-black ${isDarkMode ? 'text-white' : 'text-slate-900'} leading-none`}>
+          RM {hideAmounts ? "••••" : data.value.toFixed(2)}
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
+
+const renderActiveShape = (props: any) => {
+  const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } = props;
+  return (
+    <g>
+      <Sector
+        cx={cx}
+        cy={cy}
+        innerRadius={innerRadius}
+        outerRadius={outerRadius + 4}
+        startAngle={startAngle}
+        endAngle={endAngle}
+        fill={fill}
+      />
+    </g>
+  );
+};
+
+export const Analytics: React.FC<AnalyticsProps> = ({ transactions, categories, isDarkMode, hideAmounts, onCategoryClick }) => {
   const [viewDate, setViewDate] = useState(new Date());
+  const [activeIndex, setActiveIndex] = useState<number | undefined>(undefined);
 
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const currentMonth = viewDate.getMonth();
@@ -67,6 +101,7 @@ export const Analytics: React.FC<AnalyticsProps> = ({ transactions, categories, 
     return categories
       .filter(c => c.type === TransactionType.EXPENSE)
       .map(cat => ({
+        id: cat.id,
         name: cat.name,
         value: expensesOnly.filter(t => t.categoryId === cat.id).reduce((sum, t) => sum + t.amount, 0),
         color: cat.color,
@@ -88,8 +123,22 @@ export const Analytics: React.FC<AnalyticsProps> = ({ transactions, categories, 
     });
   }, [currentYear, currentMonth, expensesOnly, monthTransactions]);
 
+  const onPieEnter = (_: any, index: number) => {
+    setActiveIndex(index);
+  };
+
+  const onPieLeave = () => {
+    setActiveIndex(undefined);
+  };
+
+  const onTopExpenseClick = (catId: string) => {
+    if (onCategoryClick) {
+      onCategoryClick(catId, currentMonth, currentYear);
+    }
+  };
+
   return (
-    <div className="p-4 sm:p-6 space-y-6 pb-40">
+    <div className="p-4 sm:p-6 space-y-6 pb-40 select-none">
       <div className="flex justify-between items-center px-1">
         <div>
           <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100">Analysis</h1>
@@ -97,7 +146,7 @@ export const Analytics: React.FC<AnalyticsProps> = ({ transactions, categories, 
         </div>
         <button 
           onClick={resetToToday} 
-          className="h-11 w-11 bg-white dark:bg-slate-900 rounded-2xl flex items-center justify-center shadow-sm border border-slate-100 dark:border-slate-800 text-blue-600 active:scale-95 transition-all"
+          className="h-11 w-11 bg-white dark:bg-slate-900 rounded-2xl flex items-center justify-center shadow-sm border border-slate-100 dark:border-slate-800 text-blue-600 active:scale-90 transition-all"
         >
           <CalendarIcon size={20} />
         </button>
@@ -120,9 +169,7 @@ export const Analytics: React.FC<AnalyticsProps> = ({ transactions, categories, 
              </span>
              <ChevronDown size={14} className="ml-1 text-slate-300 pointer-events-none" />
            </div>
-
            <div className="w-[1px] h-6 bg-slate-100 dark:bg-slate-800" />
-
            <div className="flex-1 relative flex items-center justify-center">
              <select 
                value={currentYear} 
@@ -142,11 +189,11 @@ export const Analytics: React.FC<AnalyticsProps> = ({ transactions, categories, 
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] shadow-sm space-y-6">
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] shadow-sm space-y-6 overflow-visible">
           <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Spending Profile</h3>
           <div className="flex flex-col sm:flex-row items-center gap-8">
-            <div className="h-44 w-44 flex-shrink-0 relative overflow-visible">
-               <div className="absolute inset-0 flex flex-col items-center justify-center z-10 text-center pointer-events-none">
+            <div className="h-44 w-44 flex-shrink-0 relative">
+               <div className={`absolute inset-0 flex flex-col items-center justify-center z-10 text-center pointer-events-none transition-all duration-150 ${activeIndex !== undefined ? 'opacity-0 scale-90 blur-sm' : 'opacity-100 scale-100'}`}>
                   <p className="text-[9px] font-black text-gray-400 uppercase mb-0.5">Total</p>
                   <p className="text-sm font-black text-gray-900 dark:text-white leading-none">
                     RM {hideAmounts ? "•••" : (totalSpend > 999 ? (totalSpend/1000).toFixed(1)+'k' : totalSpend.toFixed(0))}
@@ -156,16 +203,16 @@ export const Analytics: React.FC<AnalyticsProps> = ({ transactions, categories, 
                 <PieChart margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
                   <Pie 
                     data={spendingByCategory.length > 0 ? spendingByCategory : [{value: 1, color: isDarkMode ? '#1e293b' : '#f8fafc'}]} 
-                    cx="50%" 
-                    cy="50%" 
-                    innerRadius={52} 
-                    outerRadius={72} 
-                    paddingAngle={4} 
-                    dataKey="value" 
-                    stroke="none"
+                    cx="50%" cy="50%" innerRadius={52} outerRadius={72} paddingAngle={4} dataKey="value" stroke="none"
+                    activeIndex={activeIndex}
+                    activeShape={renderActiveShape}
+                    onMouseEnter={onPieEnter}
+                    onMouseLeave={onPieLeave}
+                    tabIndex={-1}
                   >
-                    {spendingByCategory.length > 0 ? spendingByCategory.map((entry, idx) => <Cell key={idx} fill={entry.color} />) : <Cell fill={isDarkMode ? '#1e293b' : '#f8fafc'} />}
+                    {spendingByCategory.length > 0 ? spendingByCategory.map((entry, idx) => <Cell key={idx} fill={entry.color} style={{ outline: 'none' }} />) : <Cell fill={isDarkMode ? '#1e293b' : '#f8fafc'} />}
                   </Pie>
+                  <Tooltip content={<PieTooltip isDarkMode={isDarkMode} hideAmounts={hideAmounts} />} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -186,25 +233,24 @@ export const Analytics: React.FC<AnalyticsProps> = ({ transactions, categories, 
           <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Daily Flow</h3>
           <div className="h-52 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              {/* Corrected margins: Negative left margin removed to prevent clipping 1st/2nd day */}
-              <AreaChart data={trendData} margin={{ top: 10, right: 20, bottom: 0, left: 10 }}>
+              <AreaChart data={trendData} margin={{ top: 10, right: 10, bottom: 0, left: 0 }} tabIndex={-1}>
                 <defs>
                   <linearGradient id="colInc" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#10b981" stopOpacity={0.2}/><stop offset="95%" stopColor="#10b981" stopOpacity={0}/></linearGradient>
                   <linearGradient id="colExp" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2}/><stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/></linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDarkMode ? '#1e293b' : '#f1f5f9'} />
-                {/* Added padding to XAxis to ensure the first and last day labels aren't cut off */}
                 <XAxis 
                   dataKey="day" 
                   axisLine={false} 
                   tickLine={false} 
-                  tick={{ fontSize: 9, fill: '#94a3b8', fontWeight: 'bold' }}
-                  padding={{ left: 15, right: 15 }} 
+                  tick={{ fontSize: 9, fill: '#94a3b8', fontWeight: 'bold' }} 
+                  padding={{ left: 5, right: 5 }} 
+                  interval={4} // Force standard spacing: shows day 1, 6, 11, 16, 21, 26...
                 />
                 <YAxis hide />
                 <Tooltip content={<CustomTooltip isDarkMode={isDarkMode} hideAmounts={hideAmounts} />} />
-                <Area type="monotone" dataKey="income" stroke="#10b981" strokeWidth={3} fill="url(#colInc)" />
-                <Area type="monotone" dataKey="expense" stroke="#3b82f6" strokeWidth={3} fill="url(#colExp)" />
+                <Area type="monotone" dataKey="income" stroke="#10b981" strokeWidth={3} fill="url(#colInc)" activeDot={{ r: 6, strokeWidth: 0 }} animationDuration={400} />
+                <Area type="monotone" dataKey="expense" stroke="#3b82f6" strokeWidth={3} fill="url(#colExp)" activeDot={{ r: 6, strokeWidth: 0 }} animationDuration={400} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -215,7 +261,11 @@ export const Analytics: React.FC<AnalyticsProps> = ({ transactions, categories, 
         <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest px-1">Top Expenses</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {spendingByCategory.map(item => (
-            <div key={item.name} className="bg-white dark:bg-slate-900 p-4 rounded-2xl flex items-center justify-between shadow-sm border border-slate-50 dark:border-slate-800 transition-all active:scale-[0.98]">
+            <div 
+              key={item.name} 
+              onClick={() => onTopExpenseClick(item.id)}
+              className="bg-white dark:bg-slate-900 p-4 rounded-2xl flex items-center justify-between shadow-sm border border-slate-50 dark:border-slate-800 active:scale-[0.97] transition-all cursor-pointer"
+            >
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${item.color}15`, color: item.color }}>
                   {ICON_MAP[item.icon]}

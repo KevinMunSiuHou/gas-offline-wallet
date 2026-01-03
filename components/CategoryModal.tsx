@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { X } from 'lucide-react';
+import { X, CheckCircle2 } from 'lucide-react';
 import { TransactionType, Category } from '../types';
 import { IconSelector } from './IconSelector';
 
@@ -103,9 +103,10 @@ export const CategoryModal: React.FC<CategoryModalProps> = ({ isOpen, onClose, o
 
           <button
             type="submit"
-            className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all active:scale-95 shadow-lg shadow-blue-900/10"
+            className="w-full h-16 bg-blue-600 text-white rounded-2xl font-black text-lg flex items-center justify-center gap-2 hover:bg-blue-700 transition-all active:scale-95 shadow-xl shadow-blue-600/20"
           >
-            Create Category
+            <CheckCircle2 size={20} />
+            <span>Create Category</span>
           </button>
         </form>
       </div>

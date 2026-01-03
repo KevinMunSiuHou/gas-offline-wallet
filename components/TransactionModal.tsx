@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { X, Trash2, AlertTriangle, Calendar, ChevronDown, Wallet as WalletIcon } from 'lucide-react';
+import { X, Trash2, AlertTriangle, Calendar, ChevronDown, Wallet as WalletIcon, CheckCircle2 } from 'lucide-react';
 import { Wallet, Category, TransactionType, Transaction } from '../types';
 import { ICON_MAP } from '../constants';
 
@@ -157,7 +157,10 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
               <input type="text" className={inputBase + " px-5"} value={note} onChange={e => setNote(e.target.value)} placeholder="Lunch, Coffee, etc." />
             </div>
 
-            <button type="submit" className="w-full h-16 bg-blue-600 text-white rounded-2xl font-black text-lg shadow-xl shadow-blue-600/20 active:scale-95 transition-all mt-4">{initialTransaction ? 'Update Record' : 'Save Transaction'}</button>
+            <button type="submit" className="w-full h-16 bg-blue-600 text-white rounded-2xl font-black text-lg shadow-xl shadow-blue-600/20 active:scale-95 transition-all mt-4 flex items-center justify-center gap-2">
+              <CheckCircle2 size={20} />
+              <span>{initialTransaction ? 'Update Record' : 'Save Transaction'}</span>
+            </button>
           </form>
 
           {initialTransaction && onDelete && (
