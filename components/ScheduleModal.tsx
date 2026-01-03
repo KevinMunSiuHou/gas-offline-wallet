@@ -131,9 +131,9 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6 no-scrollbar">
-          <div className={`flex p-1 rounded-xl ${isDarkMode ? 'bg-slate-800' : 'bg-gray-100'}`}>
-            <button type="button" onClick={() => setType(TransactionType.EXPENSE)} className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${type === TransactionType.EXPENSE ? 'bg-white dark:bg-slate-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-gray-500'}`}>Expense</button>
-            <button type="button" onClick={() => setType(TransactionType.INCOME)} className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${type === TransactionType.INCOME ? 'bg-white dark:bg-slate-700 shadow-sm text-emerald-600 dark:text-emerald-400' : 'text-gray-500'}`}>Income</button>
+          <div className={`flex p-1.5 rounded-2xl ${isDarkMode ? 'bg-slate-800' : 'bg-gray-100'}`}>
+            <button type="button" onClick={() => setType(TransactionType.EXPENSE)} className={`flex-1 py-2.5 rounded-xl text-xs font-black transition-all ${type === TransactionType.EXPENSE ? 'bg-white dark:bg-slate-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-gray-400'}`}>EXPENSE</button>
+            <button type="button" onClick={() => setType(TransactionType.INCOME)} className={`flex-1 py-2.5 rounded-xl text-xs font-black transition-all ${type === TransactionType.INCOME ? 'bg-white dark:bg-slate-700 shadow-sm text-emerald-600 dark:text-emerald-400' : 'text-gray-400'}`}>INCOME</button>
           </div>
 
           <div className="space-y-4">
@@ -141,8 +141,8 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Title</label>
               <input 
                 type="text" 
-                placeholder="e.g. Salary, Electricity Bill" 
-                className={`w-full p-4 rounded-2xl border-none outline-none font-bold ${isDarkMode ? 'bg-slate-800 text-gray-100' : 'bg-gray-50'}`}
+                placeholder="e.g. Monthly Rent" 
+                className={`w-full px-5 py-4.5 rounded-2xl border-2 border-transparent outline-none font-bold shadow-sm transition-all focus:ring-4 focus:ring-blue-500/10 ${isDarkMode ? 'bg-slate-800 text-gray-100 focus:bg-slate-700' : 'bg-gray-50 focus:bg-white focus:border-blue-100'}`}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
@@ -150,13 +150,13 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
             </div>
             <div className="space-y-2">
               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Amount</label>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-gray-400">RM</span>
+              <div className="relative group">
+                <span className="absolute left-5 top-1/2 -translate-y-1/2 font-black text-gray-400 text-lg">RM</span>
                 <input 
                   type="number" 
                   step="0.01"
                   placeholder="0.00" 
-                  className={`w-full pl-12 pr-4 py-4 rounded-2xl border-none outline-none font-black text-2xl ${isDarkMode ? 'bg-slate-800 text-gray-100' : 'bg-gray-50'}`}
+                  className={`w-full pl-14 pr-6 py-5 rounded-2xl border-2 border-transparent outline-none font-black text-3xl shadow-sm transition-all focus:ring-4 focus:ring-blue-500/10 ${isDarkMode ? 'bg-slate-800 text-gray-100 focus:bg-slate-700' : 'bg-gray-50 focus:bg-white focus:border-blue-100'}`}
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   required
@@ -168,9 +168,9 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Frequency</label>
-              <div className="relative">
+              <div className="relative group">
                 <select 
-                  className={`w-full p-3 rounded-xl border-none outline-none font-bold text-sm appearance-none pr-10 ${isDarkMode ? 'bg-slate-800 text-gray-100' : 'bg-gray-50'}`}
+                  className={`w-full pl-5 pr-10 py-4.5 rounded-2xl border-2 border-transparent outline-none font-black text-sm appearance-none shadow-sm transition-all focus:ring-4 focus:ring-blue-500/10 cursor-pointer ${isDarkMode ? 'bg-slate-800 text-gray-100 focus:bg-slate-700' : 'bg-gray-50 focus:bg-white focus:border-blue-100'}`}
                   value={frequency}
                   onChange={(e) => setFrequency(e.target.value as Frequency)}
                 >
@@ -178,7 +178,7 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
                   <option value={Frequency.WEEKLY}>Weekly</option>
                   <option value={Frequency.MONTHLY}>Monthly</option>
                 </select>
-                <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" />
+                <ChevronDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 transition-colors group-focus-within:text-blue-500" />
               </div>
             </div>
             
@@ -187,7 +187,7 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Day of Month</label>
                 <input 
                   type="number" min="1" max="31"
-                  className={`w-full p-3 rounded-xl border-none outline-none font-bold text-sm ${isDarkMode ? 'bg-slate-800 text-gray-100' : 'bg-gray-50'}`}
+                  className={`w-full px-5 py-4.5 rounded-2xl border-2 border-transparent outline-none font-black text-sm shadow-sm transition-all focus:ring-4 focus:ring-blue-500/10 ${isDarkMode ? 'bg-slate-800 text-gray-100 focus:bg-slate-700' : 'bg-gray-50 focus:bg-white focus:border-blue-100'}`}
                   value={dayOfMonth}
                   onChange={(e) => setDayOfMonth(parseInt(e.target.value))}
                 />
@@ -197,9 +197,9 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
             {frequency === Frequency.WEEKLY && (
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Day of Week</label>
-                <div className="relative">
+                <div className="relative group">
                   <select 
-                    className={`w-full p-3 rounded-xl border-none outline-none font-bold text-sm appearance-none pr-10 ${isDarkMode ? 'bg-slate-800 text-gray-100' : 'bg-gray-50'}`}
+                    className={`w-full pl-5 pr-10 py-4.5 rounded-2xl border-2 border-transparent outline-none font-black text-sm appearance-none shadow-sm transition-all focus:ring-4 focus:ring-blue-500/10 cursor-pointer ${isDarkMode ? 'bg-slate-800 text-gray-100 focus:bg-slate-700' : 'bg-gray-50 focus:bg-white focus:border-blue-100'}`}
                     value={dayOfWeek}
                     onChange={(e) => setDayOfWeek(parseInt(e.target.value))}
                   >
@@ -211,52 +211,43 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
                     <option value={6}>Saturday</option>
                     <option value={0}>Sunday</option>
                   </select>
-                  <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" />
+                  <ChevronDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 transition-colors group-focus-within:text-blue-500" />
                 </div>
               </div>
             )}
           </div>
 
-          {frequency === Frequency.MONTHLY && dayOfMonth > 28 && (
-            <div className={`p-3 rounded-xl border flex items-start gap-3 animate-in fade-in slide-in-from-top-2 ${isDarkMode ? 'bg-blue-900/10 border-blue-900/40 text-blue-400' : 'bg-blue-50 border-blue-100 text-blue-600'}`}>
-              <Info size={16} className="shrink-0 mt-0.5" />
-              <p className="text-[10px] font-bold leading-relaxed">
-                Setting date as {dayOfMonth} will automatically trigger on the **last day** for shorter months (e.g. Feb 28/29).
-              </p>
-            </div>
-          )}
-
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Wallet</label>
-              <div className="relative">
+              <div className="relative group">
                 <select 
-                  className={`w-full p-3 rounded-xl border-none outline-none font-bold text-sm appearance-none pr-10 ${isDarkMode ? 'bg-slate-800 text-gray-100' : 'bg-gray-50'}`}
+                  className={`w-full pl-5 pr-10 py-4.5 rounded-2xl border-2 border-transparent outline-none font-black text-sm appearance-none shadow-sm transition-all focus:ring-4 focus:ring-blue-500/10 cursor-pointer ${isDarkMode ? 'bg-slate-800 text-gray-100 focus:bg-slate-700' : 'bg-gray-50 focus:bg-white focus:border-blue-100'}`}
                   value={walletId}
                   onChange={(e) => setWalletId(e.target.value)}
                 >
                   {wallets.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
                 </select>
-                <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" />
+                <ChevronDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 transition-colors group-focus-within:text-blue-500" />
               </div>
             </div>
             <div className="space-y-2">
               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Category</label>
-              <div className="relative">
+              <div className="relative group">
                 <select 
-                  className={`w-full p-3 rounded-xl border-none outline-none font-bold text-sm appearance-none pr-10 ${isDarkMode ? 'bg-slate-800 text-gray-100' : 'bg-gray-50'}`}
+                  className={`w-full pl-5 pr-10 py-4.5 rounded-2xl border-2 border-transparent outline-none font-black text-sm appearance-none shadow-sm transition-all focus:ring-4 focus:ring-blue-500/10 cursor-pointer ${isDarkMode ? 'bg-slate-800 text-gray-100 focus:bg-slate-700' : 'bg-gray-50 focus:bg-white focus:border-blue-100'}`}
                   value={categoryId}
                   onChange={(e) => setCategoryId(e.target.value)}
                 >
                   {filteredCategories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
-                <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" />
+                <ChevronDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 transition-colors group-focus-within:text-blue-500" />
               </div>
             </div>
           </div>
 
-          <button type="submit" className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black shadow-xl active:scale-95 transition-all">
-            {initialSchedule ? 'Update Schedule' : 'Activate Schedule'}
+          <button type="submit" className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black shadow-xl shadow-blue-500/20 active:scale-[0.98] transition-all">
+            {initialSchedule ? 'Update Schedule' : 'Start Automation'}
           </button>
         </form>
       </div>

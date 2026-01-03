@@ -3,14 +3,14 @@ const CACHE_NAME = 'zenwallet-v1';
 const ASSETS = [
   './',
   './index.html',
-  'https://cdn.tailwindcss.com',
-  'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap'
+  'https://cdn.tailwindcss.com'
 ];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS);
+      // Use catch to handle individual fetch failures gracefully
+      return Promise.allSettled(ASSETS.map(asset => cache.add(asset)));
     })
   );
   self.skipWaiting();
@@ -27,6 +27,9 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  // Only handle GET requests for caching
+  if (event.request.method !== 'GET') return;
+
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
@@ -43,7 +46,6 @@ self.addEventListener('fetch', (event) => {
         return response;
       });
     }).catch(() => {
-      // Return the cached index.html for navigation requests if offline
       if (event.request.mode === 'navigate') {
         return caches.match('./index.html');
       }

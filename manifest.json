@@ -5,6 +5,7 @@
   "description": "Privacy-focused offline personal finance manager.",
   "start_url": "./",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#f8fafc",
   "theme_color": "#2563eb",
   "icons": [

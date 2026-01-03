@@ -33,7 +33,6 @@ const App: React.FC = () => {
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Background Scheduler Engine
   const processSchedules = useCallback(() => {
     const nowTimestamp = Date.now();
     let hasChanges = false;
@@ -58,7 +57,6 @@ const App: React.FC = () => {
         };
         newTransactions.push(newTx);
 
-        // Calculate the actual logical next run date
         const d = new Date(currentNextRun);
         if (schedule.frequency === Frequency.DAILY) {
           d.setDate(d.getDate() + 1);
@@ -85,11 +83,11 @@ const App: React.FC = () => {
         schedules: updatedSchedules
       }));
     }
-  }, [state.schedules]);
+  }, [state.schedules, state.transactions]);
 
   useEffect(() => {
     processSchedules();
-  }, []); // Run on mount
+  }, [processSchedules]);
 
   useEffect(() => {
     if (!pendingRestoreData && !isProcessing) {
@@ -336,7 +334,13 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className={`max-w-md mx-auto min-h-screen relative shadow-2xl overflow-hidden flex flex-col transition-colors duration-300 ${state.isDarkMode ? 'dark bg-slate-950 text-slate-100' : 'bg-[#f8fafc] text-slate-900'}`}>
+    <div 
+      className={`w-full h-full flex flex-col relative transition-colors duration-300 ${state.isDarkMode ? 'dark bg-slate-950 text-slate-100' : 'bg-[#f8fafc] text-slate-900'}`}
+      style={{ 
+        paddingTop: 'var(--safe-top)', 
+        paddingBottom: 'var(--safe-bottom)' 
+      }}
+    >
       
       {isProcessing && (
         <div className="fixed inset-0 bg-white/70 dark:bg-black/80 backdrop-blur-md z-[100] flex flex-col items-center justify-center">
@@ -356,7 +360,8 @@ const App: React.FC = () => {
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto no-scrollbar">
+      {/* Main Scrollable Content Area */}
+      <div className="flex-1 scroll-container no-scrollbar relative min-h-0">
         {activeTab === 'home' && (
           <MainDashboard 
             wallets={calculatedWallets} 
@@ -373,7 +378,7 @@ const App: React.FC = () => {
         )}
 
         {activeTab === 'history' && (
-          <div className="p-6 space-y-4 pb-40">
+          <div className="p-6 space-y-4 pb-12">
             <div className="flex items-center gap-4">
               <button onClick={() => setActiveTab('home')} className="p-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm text-slate-500 dark:text-slate-400 active:scale-95 transition-all">
                 <ArrowLeft size={20} />
@@ -452,7 +457,7 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {activeTab === 'analytics' && <Analytics transactions={state.transactions} categories={state.categories} isDarkMode={state.isDarkMode} hideAmounts={state.hideAmounts} />}
+        {activeTab === 'analytics' && <div className="scroll-container no-scrollbar"><Analytics transactions={state.transactions} categories={state.categories} isDarkMode={state.isDarkMode} hideAmounts={state.hideAmounts} /></div>}
         
         {activeTab === 'schedules' && (
           <ScheduleManager 
@@ -470,7 +475,7 @@ const App: React.FC = () => {
         )}
 
         {activeTab === 'settings' && (
-          <div className="p-6 space-y-8 pb-40">
+          <div className="p-6 space-y-8 pb-12">
              <h1 className="text-3xl font-black text-slate-900 dark:text-slate-100">Settings</h1>
              
              {pendingRestoreData && (
@@ -564,32 +569,30 @@ const App: React.FC = () => {
         )}
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl border-t border-slate-100 dark:border-slate-800 px-2 py-4 z-40">
+      {/* Persistent Bottom Tab Bar */}
+      <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl border-t border-slate-100 dark:border-slate-800 px-2 py-4 z-40 shrink-0">
         <div className="grid grid-cols-5 items-center">
-          <button onClick={() => setActiveTab('home')} className={`flex flex-col items-center gap-1.5 transition-all ${activeTab === 'home' ? 'text-blue-600 scale-105' : 'text-slate-400'}`}>
-            <Home size={22} strokeWidth={activeTab === 'home' ? 2.5 : 2} />
-            <span className="text-[10px] font-black uppercase tracking-tighter">Home</span>
+          <button onClick={() => setActiveTab('home')} className={`flex flex-col items-center py-2 transition-all ${activeTab === 'home' ? 'text-blue-600 scale-110' : 'text-slate-400'}`}>
+            <Home size={28} strokeWidth={activeTab === 'home' ? 2.5 : 2} />
           </button>
-          <button onClick={() => setActiveTab('analytics')} className={`flex flex-col items-center gap-1.5 transition-all ${activeTab === 'analytics' ? 'text-blue-600 scale-105' : 'text-slate-400'}`}>
-            <PieChart size={22} strokeWidth={activeTab === 'analytics' ? 2.5 : 2} />
-            <span className="text-[10px] font-black uppercase tracking-tighter">Charts</span>
+          <button onClick={() => setActiveTab('analytics')} className={`flex flex-col items-center py-2 transition-all ${activeTab === 'analytics' ? 'text-blue-600 scale-110' : 'text-slate-400'}`}>
+            <PieChart size={28} strokeWidth={activeTab === 'analytics' ? 2.5 : 2} />
           </button>
-          <div className="flex justify-center -mt-12">
-            <button onClick={() => { if (calculatedWallets.length === 0) { setIsWalletModalOpen(true); } else { setEditingTransaction(null); setIsTxModalOpen(true); } }} className="h-16 w-16 bg-blue-600 text-white rounded-2xl shadow-2xl flex items-center justify-center hover:bg-blue-700 active:scale-90 transition-all border-[6px] border-[#f8fafc] dark:border-slate-950">
+          <div className="flex justify-center -mt-10">
+            <button onClick={() => { if (calculatedWallets.length === 0) { setIsWalletModalOpen(true); } else { setEditingTransaction(null); setIsTxModalOpen(true); } }} className="h-14 w-14 bg-blue-600 text-white rounded-2xl shadow-xl flex items-center justify-center hover:bg-blue-700 active:scale-90 transition-all border-4 border-[#f8fafc] dark:border-slate-950">
               <Plus size={32} strokeWidth={3} />
             </button>
           </div>
-          <button onClick={() => setActiveTab('history')} className={`flex flex-col items-center gap-1.5 transition-all ${activeTab === 'history' ? 'text-blue-600 scale-105' : 'text-slate-400'}`}>
-            <Clock size={22} strokeWidth={activeTab === 'history' ? 2.5 : 2} />
-            <span className="text-[10px] font-black uppercase tracking-tighter">History</span>
+          <button onClick={() => setActiveTab('history')} className={`flex flex-col items-center py-2 transition-all ${activeTab === 'history' ? 'text-blue-600 scale-110' : 'text-slate-400'}`}>
+            <Clock size={28} strokeWidth={activeTab === 'history' ? 2.5 : 2} />
           </button>
-          <button onClick={() => setActiveTab('settings')} className={`flex flex-col items-center gap-1.5 transition-all ${activeTab === 'settings' || activeTab === 'schedules' ? 'text-blue-600 scale-105' : 'text-slate-400'}`}>
-            <Settings size={22} strokeWidth={activeTab === 'settings' || activeTab === 'schedules' ? 2.5 : 2} />
-            <span className="text-[10px] font-black uppercase tracking-tighter">Set</span>
+          <button onClick={() => setActiveTab('settings')} className={`flex flex-col items-center py-2 transition-all ${activeTab === 'settings' || activeTab === 'schedules' ? 'text-blue-600 scale-110' : 'text-slate-400'}`}>
+            <Settings size={28} strokeWidth={activeTab === 'settings' || activeTab === 'schedules' ? 2.5 : 2} />
           </button>
         </div>
       </div>
 
+      {/* Modals */}
       <TransactionModal isOpen={isTxModalOpen} onClose={() => { setIsTxModalOpen(false); setEditingTransaction(null); }} onAdd={handleAddTransaction} onUpdate={handleUpdateTransaction} onDelete={handleDeleteTransaction} initialTransaction={editingTransaction} wallets={calculatedWallets} categories={state.categories} isDarkMode={state.isDarkMode} />
       <WalletModal isOpen={isWalletModalOpen} onClose={() => { setIsWalletModalOpen(false); setEditingWallet(null); }} onAdd={handleAddWallet} onUpdate={handleUpdateWallet} onDelete={handleDeleteWallet} initialWallet={editingWallet} availableTypes={state.walletTypes} isDarkMode={state.isDarkMode} />
       <CategoryModal isOpen={isCategoryModalOpen} onClose={() => setIsCategoryModalOpen(false)} onAdd={handleAddCategory} isDarkMode={state.isDarkMode} />

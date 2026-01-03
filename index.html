@@ -3,7 +3,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="theme-color" content="#2563eb" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -25,11 +25,63 @@
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
+      :root {
+        --safe-top: env(safe-area-inset-top, 0px);
+        --safe-bottom: env(safe-area-inset-bottom, 0px);
+      }
+      
+      html, body {
+        height: 100%;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background-color: #f8fafc;
+        position: fixed;
+        left: 0;
+        top: 0;
+        touch-action: none;
+      }
+
       body {
         font-family: 'Inter', sans-serif;
-        background-color: #f8fafc;
         -webkit-tap-highlight-color: transparent;
       }
+
+      #root {
+        height: 100dvh;
+        width: 100dvw;
+        display: flex;
+        flex-direction: column;
+        background-color: inherit;
+        position: absolute;
+        top: 0;
+        left: 0;
+        overflow: hidden;
+        touch-action: pan-y;
+      }
+
+      /* Native-like orientation hack for browsers that ignore manifest */
+      @media screen and (orientation: landscape) {
+        #root {
+          width: 100dvh !important;
+          height: 100dvw !important;
+          top: 50% !important;
+          left: 50% !important;
+          transform: translate(-50%, -50%) rotate(-90deg);
+          transform-origin: center center;
+        }
+      }
+
+      .scroll-container {
+        flex: 1;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        touch-action: pan-y !important;
+        position: relative;
+        height: 100%;
+      }
+
       .no-scrollbar::-webkit-scrollbar {
         display: none;
       }
@@ -37,8 +89,15 @@
         -ms-overflow-style: none;
         scrollbar-width: none;
       }
-      body {
-        overscroll-behavior-y: contain;
+
+      * {
+        -webkit-user-select: none;
+        user-select: none;
+      }
+
+      input, textarea, [contenteditable="true"] {
+        -webkit-user-select: text;
+        user-select: text;
       }
     </style>
   <script type="importmap">
@@ -54,14 +113,27 @@
 </script>
 <link rel="stylesheet" href="/index.css">
 </head>
-  <body>
+  <body class="bg-slate-50 dark:bg-slate-950">
     <div id="root"></div>
     <script>
+      // Force Orientation Lock - Essential for Android/MIUI
+      const lockOrientation = async () => {
+        try {
+          if (screen.orientation && screen.orientation.lock) {
+            await screen.orientation.lock('portrait-primary');
+          }
+        } catch (e) {
+          // If browser fails, the CSS @media fallback handles it visually
+          console.debug('System lock unavailable, using CSS fallback.');
+        }
+      };
+
+      window.addEventListener('load', lockOrientation);
+      window.addEventListener('touchstart', lockOrientation, { once: true });
+
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js')
-            .then(reg => console.log('Service Worker registered', reg))
-            .catch(err => console.error('Service Worker registration failed', err));
+          navigator.serviceWorker.register('./sw.js').catch(() => {});
         });
       }
     </script>
