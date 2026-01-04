@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, ChevronDown, ListFilter } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, ChevronDown, ChevronUp, ListFilter } from 'lucide-react';
 import { Transaction, Category, TransactionType } from '../types';
 import { ICON_MAP } from '../constants';
 
@@ -37,6 +37,7 @@ const CustomTooltip = ({ active, payload, label, isDarkMode, hideAmounts }: any)
 
 export const Analytics: React.FC<AnalyticsProps> = ({ transactions, categories, isDarkMode, hideAmounts, onCategoryClick }) => {
   const [viewDate, setViewDate] = useState(new Date());
+  const [isBreakdownExpanded, setIsBreakdownExpanded] = useState(false);
 
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const currentMonth = viewDate.getMonth();
@@ -77,6 +78,8 @@ export const Analytics: React.FC<AnalyticsProps> = ({ transactions, categories, 
       .filter(d => d.value > 0)
       .sort((a, b) => b.value - a.value);
   }, [categories, expensesOnly]);
+
+  const displayedBreakdown = isBreakdownExpanded ? spendingByCategory : spendingByCategory.slice(0, 3);
 
   const trendData = useMemo(() => {
     const days = new Date(currentYear, currentMonth + 1, 0).getDate();
@@ -180,9 +183,9 @@ export const Analytics: React.FC<AnalyticsProps> = ({ transactions, categories, 
                   </Pie>
                 </PieChart>
               </ResponsiveContainer>
-              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <p className="text-[10px] font-black text-gray-400 uppercase mb-0.5">Expenses</p>
-                <p className="text-xl font-black text-gray-900 dark:text-white leading-none">
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-2">
+                <p className="text-[10px] font-black text-gray-400 uppercase mb-0.5">Total Expenses</p>
+                <p className="text-lg font-black text-gray-900 dark:text-white leading-none">
                   {hideAmounts ? "••••" : `RM ${totalSpend.toFixed(0)}`}
                 </p>
               </div>
@@ -190,39 +193,59 @@ export const Analytics: React.FC<AnalyticsProps> = ({ transactions, categories, 
 
             {/* Breakdown List */}
             <div className="flex-1 w-full space-y-4">
-               <div className="flex items-center gap-2 mb-2">
-                 <ListFilter size={14} className="text-blue-500" />
-                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Category Breakdown</span>
+               <div className="flex items-center justify-between mb-2">
+                 <div className="flex items-center gap-2">
+                   <ListFilter size={14} className="text-blue-500" />
+                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Category Breakdown</span>
+                 </div>
                </div>
-               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[300px] overflow-y-auto no-scrollbar pr-1">
+               
+               <div className="space-y-3">
                  {spendingByCategory.length === 0 ? (
-                   <div className="col-span-full py-10 text-center border-2 border-dashed border-slate-50 dark:border-slate-800 rounded-3xl">
+                   <div className="py-10 text-center border-2 border-dashed border-slate-50 dark:border-slate-800 rounded-3xl">
                      <p className="text-[10px] font-black text-slate-300 uppercase">No expenses recorded</p>
                    </div>
                  ) : (
-                   spendingByCategory.map(item => (
-                    <div 
-                      key={item.id} 
-                      onClick={() => onCategoryItemClick(item.id)}
-                      className="bg-slate-50/50 dark:bg-slate-800/50 p-3.5 rounded-2xl flex items-center justify-between border border-transparent active:border-blue-200 dark:active:border-blue-900 transition-all cursor-pointer group"
-                    >
-                      <div className="flex items-center gap-3 overflow-hidden">
-                        <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: `${item.color}15`, color: item.color }}>
-                          {ICON_MAP[item.icon]}
-                        </div>
-                        <div className="overflow-hidden">
-                          <p className="text-[11px] font-black text-slate-900 dark:text-white leading-none truncate mb-1">{item.name}</p>
-                          <div className="flex items-center gap-1.5">
-                            <div className="w-12 h-1 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                              <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${(item.value / totalSpend) * 100}%`, backgroundColor: item.color }}></div>
+                   <>
+                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                       {displayedBreakdown.map(item => (
+                        <div 
+                          key={item.id} 
+                          onClick={() => onCategoryItemClick(item.id)}
+                          className="bg-slate-50/50 dark:bg-slate-800/50 p-3.5 rounded-2xl flex items-center justify-between border border-transparent active:border-blue-200 dark:active:border-blue-900 transition-all cursor-pointer group"
+                        >
+                          <div className="flex items-center gap-3 overflow-hidden">
+                            <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: `${item.color}15`, color: item.color }}>
+                              {ICON_MAP[item.icon]}
                             </div>
-                            <p className="text-[8px] text-slate-400 font-bold leading-none">{((item.value / totalSpend) * 100).toFixed(0)}%</p>
+                            <div className="overflow-hidden">
+                              <p className="text-[11px] font-black text-slate-900 dark:text-white leading-none truncate mb-1">{item.name}</p>
+                              <div className="flex items-center gap-1.5">
+                                <div className="w-12 h-1 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                                  <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${(item.value / totalSpend) * 100}%`, backgroundColor: item.color }}></div>
+                                </div>
+                                <p className="text-[8px] text-slate-400 font-bold leading-none">{((item.value / totalSpend) * 100).toFixed(0)}%</p>
+                              </div>
+                            </div>
                           </div>
+                          <p className="text-[11px] font-black text-slate-900 dark:text-white shrink-0 ml-2">RM {hideAmounts ? "•••" : item.value.toFixed(0)}</p>
                         </div>
-                      </div>
-                      <p className="text-[11px] font-black text-slate-900 dark:text-white shrink-0 ml-2">RM {hideAmounts ? "•••" : item.value.toFixed(0)}</p>
-                    </div>
-                   ))
+                       ))}
+                     </div>
+                     
+                     {spendingByCategory.length > 3 && (
+                       <button 
+                         onClick={() => setIsBreakdownExpanded(!isBreakdownExpanded)}
+                         className="w-full h-12 flex items-center justify-center gap-2 bg-slate-50 dark:bg-slate-800/50 rounded-2xl text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest active:scale-[0.98] transition-all"
+                       >
+                         {isBreakdownExpanded ? (
+                           <>Show Less <ChevronUp size={14} strokeWidth={3} /></>
+                         ) : (
+                           <>Show All Categories ({spendingByCategory.length}) <ChevronDown size={14} strokeWidth={3} /></>
+                         )}
+                       </button>
+                     )}
+                   </>
                  )}
                </div>
             </div>

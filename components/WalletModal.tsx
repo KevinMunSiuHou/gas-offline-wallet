@@ -57,7 +57,12 @@ export const WalletModal: React.FC<WalletModalProps> = ({
     }
   };
 
-  const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#000000', '#ec4899', '#6366f1'];
+  const COLORS = [
+    '#3b82f6', '#0ea5e9', '#06b6d4', '#14b8a6', '#10b981',
+    '#22c55e', '#84cc16', '#eab308', '#f59e0b', '#f97316',
+    '#ef4444', '#f43f5e', '#ec4899', '#d946ef', '#a855f7',
+    '#8b5cf6', '#6366f1', '#64748b', '#475569', '#000000'
+  ];
   
   const inputCls = `w-full h-14 px-5 rounded-2xl border-2 border-transparent outline-none transition-all font-black text-sm shadow-sm ${isDarkMode ? 'bg-slate-800 text-white focus:bg-slate-700' : 'bg-slate-50 text-slate-800 focus:bg-white focus:border-blue-100'}`;
 
@@ -100,8 +105,8 @@ export const WalletModal: React.FC<WalletModalProps> = ({
 
             <div className="space-y-3 pt-2">
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Theme Color</label>
-              <div className="flex flex-wrap gap-2 justify-between">
-                {COLORS.map(c => <button key={c} type="button" onClick={() => setColor(c)} className={`w-9 h-9 rounded-2xl border-4 transition-all ${color === c ? 'border-blue-500 scale-110 shadow-lg' : 'border-transparent'}`} style={{ backgroundColor: c }} />)}
+              <div className="grid grid-cols-5 gap-2">
+                {COLORS.map(c => <button key={c} type="button" onClick={() => setColor(c)} className={`w-full aspect-square rounded-xl border-4 transition-all ${color === c ? 'border-blue-500 scale-110 shadow-lg' : 'border-transparent'}`} style={{ backgroundColor: c }} />)}
               </div>
             </div>
             

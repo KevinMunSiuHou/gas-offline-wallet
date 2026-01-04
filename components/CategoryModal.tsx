@@ -63,7 +63,12 @@ export const CategoryModal: React.FC<CategoryModalProps> = ({
     }
   };
 
-  const COLORS = ['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#6b7280', '#000000'];
+  const COLORS = [
+    '#ef4444', '#f43f5e', '#ec4899', '#d946ef', '#a855f7',
+    '#8b5cf6', '#6366f1', '#3b82f6', '#0ea5e9', '#06b6d4',
+    '#14b8a6', '#10b981', '#22c55e', '#84cc16', '#eab308',
+    '#f59e0b', '#f97316', '#64748b', '#475569', '#000000'
+  ];
 
   return (
     <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4">
@@ -130,14 +135,14 @@ export const CategoryModal: React.FC<CategoryModalProps> = ({
 
           <div className="space-y-3">
             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Theme Color</label>
-            <div className="flex flex-wrap gap-2 justify-between">
+            <div className="grid grid-cols-5 gap-2">
               {COLORS.map(c => (
                 <button
                   key={c}
                   type="button"
                   onClick={() => setColor(c)}
-                  className={`w-9 h-9 rounded-2xl border-4 transition-all ${
-                    color === c ? (isDarkMode ? 'border-blue-500 scale-110 shadow-lg' : 'border-blue-500 scale-110 shadow-lg') : 'border-transparent'
+                  className={`w-full aspect-square rounded-xl border-4 transition-all ${
+                    color === c ? 'border-blue-500 scale-110 shadow-lg' : 'border-transparent'
                   }`}
                   style={{ backgroundColor: c }}
                 />
