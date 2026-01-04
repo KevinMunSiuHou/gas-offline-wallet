@@ -47,13 +47,13 @@ export const WalletModal: React.FC<WalletModalProps> = ({
     onClose();
   };
 
-  // Fix: Added missing handleDelete function to resolve the "Cannot find name 'handleDelete'" error.
   const handleDelete = () => {
     if (!confirmDelete) {
       setConfirmDelete(true);
       setTimeout(() => setConfirmDelete(false), 3000);
     } else if (initialWallet && onDelete) {
       onDelete(initialWallet.id);
+      onClose();
     }
   };
 
@@ -62,14 +62,19 @@ export const WalletModal: React.FC<WalletModalProps> = ({
   const inputCls = `w-full h-14 px-5 rounded-2xl border-2 border-transparent outline-none transition-all font-black text-sm shadow-sm ${isDarkMode ? 'bg-slate-800 text-white focus:bg-slate-700' : 'bg-slate-50 text-slate-800 focus:bg-white focus:border-blue-100'}`;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 overflow-y-auto">
-      <div className={`w-full max-w-sm rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in duration-200 transition-colors ${isDarkMode ? 'bg-slate-900' : 'bg-white'}`}>
-        <div className={`p-6 border-b flex justify-between items-center ${isDarkMode ? 'border-slate-800' : 'border-slate-50'}`}>
+    <div 
+      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-md p-0 sm:p-4 overflow-y-auto"
+    >
+      <div className={`w-full max-w-sm rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl overflow-hidden animate-slide-up max-h-[92vh] flex flex-col transition-colors ${isDarkMode ? 'bg-slate-900' : 'bg-white'}`}>
+        <div 
+          className={`p-6 border-b flex justify-between items-center ${isDarkMode ? 'border-slate-800' : 'border-slate-50'}`}
+          style={{ paddingTop: 'calc(1.5rem + env(safe-area-inset-top))' }}
+        >
           <h2 className={`text-xl font-black ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{initialWallet ? 'Edit Wallet' : 'New Wallet'}</h2>
           <button onClick={onClose} className="p-2 text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-full transition-all"><X size={24} /></button>
         </div>
 
-        <div className="p-7 space-y-6">
+        <div className="p-7 space-y-6 overflow-y-auto no-scrollbar pb-10">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Account Type</label>

@@ -1,7 +1,7 @@
 
 {
-  "name": "ZenWallet",
-  "short_name": "ZenWallet",
+  "name": "PersonalWallet",
+  "short_name": "PersonalWallet",
   "description": "Privacy-focused offline personal finance manager.",
   "start_url": "./",
   "display": "standalone",

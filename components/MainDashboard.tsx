@@ -50,7 +50,7 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({
       {/* Header */}
       <div className="flex justify-between items-center px-1">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100">ZenWallet</h1>
+          <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100">PersonalWallet</h1>
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mt-1">Personal Finance</p>
         </div>
         <div className="flex items-center gap-2">

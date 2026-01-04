@@ -10,6 +10,7 @@ import { WalletModal } from './components/WalletModal';
 import { CategoryModal } from './components/CategoryModal';
 import { ScheduleModal } from './components/ScheduleModal';
 import { ScheduleManager } from './components/ScheduleManager';
+import { CategoryManager } from './components/CategoryManager';
 import { ICON_MAP } from './constants';
 
 type SortType = 'date-desc' | 'date-asc' | 'amount-desc' | 'amount-asc';
@@ -22,7 +23,7 @@ interface HistoryFilter {
 
 const App: React.FC = () => {
   const [state, setState] = useState<AppState>(storage.load());
-  const [activeTab, setActiveTab] = useState<'home' | 'analytics' | 'history' | 'settings' | 'schedules'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'analytics' | 'history' | 'settings' | 'schedules' | 'categories'>('home');
   const [isProcessing, setIsProcessing] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   
@@ -32,6 +33,7 @@ const App: React.FC = () => {
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
   const [editingWallet, setEditingWallet] = useState<Wallet | null>(null);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState<Schedule | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -131,6 +133,16 @@ const App: React.FC = () => {
     }));
   }, [state.wallets, state.transactions, calculateBalance]);
 
+  const transactionCountsPerCategory = useMemo(() => {
+    const counts: Record<string, number> = {};
+    state.transactions.forEach(tx => {
+      if (tx.categoryId) {
+        counts[tx.categoryId] = (counts[tx.categoryId] || 0) + 1;
+      }
+    });
+    return counts;
+  }, [state.transactions]);
+
   const toggleDarkMode = () => {
     setState(prev => ({ ...prev, isDarkMode: !prev.isDarkMode }));
   };
@@ -209,6 +221,24 @@ const App: React.FC = () => {
       ...prev,
       categories: [...prev.categories, newCategory]
     }));
+  }, []);
+
+  const handleUpdateCategory = useCallback((updatedCategory: Category) => {
+    setState(prev => ({
+      ...prev,
+      categories: prev.categories.map(c => c.id === updatedCategory.id ? updatedCategory : c)
+    }));
+    setEditingCategory(null);
+  }, []);
+
+  const handleDeleteCategory = useCallback((id: string) => {
+    setState(prev => ({
+      ...prev,
+      categories: prev.categories.filter(c => c.id !== id),
+      // Clean up transactions linked to this category
+      transactions: prev.transactions.map(tx => tx.categoryId === id ? { ...tx, categoryId: undefined } : tx)
+    }));
+    setEditingCategory(null);
   }, []);
 
   const handleAddSchedule = useCallback((s: Omit<Schedule, 'id'>) => {
@@ -291,23 +321,30 @@ const App: React.FC = () => {
     const data = storage.load();
     const jsonString = JSON.stringify(data, null, 2);
     const dateStr = new Date().toISOString().split('T')[0];
-    const fileName = `zenwallet_backup_${dateStr}.json`;
+    const fileName = `personalwallet_backup_${dateStr}.json`;
 
     if (navigator.share) {
       try {
         const file = new File([jsonString], fileName, { type: 'application/json' });
         await navigator.share({
           files: [file],
-          title: 'ZenWallet Backup Data',
-          text: `Financial backup from ${dateStr}`
+          title: 'PersonalWallet Backup',
+          text: `Financial Snapshot from ${dateStr}`
         });
       } catch (err) {
-        if ((err as Error).name !== 'AbortError') {
-          // If sharing fails, attempt standard download
-          storage.exportData();
-        }
+        // Fallback for APK environments with restricted file sharing
+        await copyToClipboard(jsonString);
       }
     } else {
+      storage.exportData();
+    }
+  };
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      alert('Share blocked by system. Backup data copied to clipboard as text. You can save this to a notes app!');
+    } catch (err) {
       storage.exportData();
     }
   };
@@ -547,6 +584,17 @@ const App: React.FC = () => {
           />
         )}
 
+        {activeTab === 'categories' && (
+          <CategoryManager 
+            categories={state.categories}
+            transactionCounts={transactionCountsPerCategory}
+            onEdit={(cat) => { setEditingCategory(cat); setIsCategoryModalOpen(true); }}
+            onAdd={() => { setEditingCategory(null); setIsCategoryModalOpen(true); }}
+            onBack={() => setActiveTab('settings')}
+            isDarkMode={state.isDarkMode}
+          />
+        )}
+
         {activeTab === 'settings' && (
           <div className="p-6 space-y-8 pb-12">
              <h1 className="text-3xl font-black text-slate-900 dark:text-slate-100">Settings</h1>
@@ -611,10 +659,10 @@ const App: React.FC = () => {
 
              <div className="space-y-4">
                <h3 className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em] px-1">Management</h3>
-               <button onClick={() => setIsCategoryModalOpen(true)} className="w-full flex items-center justify-between p-4 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm transition-all active:scale-95">
+               <button onClick={() => setActiveTab('categories')} className="w-full flex items-center justify-between p-4 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm transition-all active:scale-95">
                  <div className="flex items-center gap-4">
                    <div className="p-2.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl"><Settings size={22} /></div>
-                   <span className="font-bold text-slate-900 dark:text-slate-100">Categories</span>
+                   <span className="font-bold text-slate-900 dark:text-slate-100">Manage Categories</span>
                  </div>
                </button>
              </div>
@@ -628,11 +676,11 @@ const App: React.FC = () => {
                  <div className="grid grid-cols-1 gap-3">
                    <button onClick={handleExportData} className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-all text-slate-700 dark:text-slate-200 font-black group">
                      <Download size={20} className="text-blue-600" />
-                     <span>Export Backup (Recommended)</span>
+                     <span>Export / Share Backup</span>
                    </button>
                    <button onClick={() => fileInputRef.current?.click()} disabled={isProcessing} className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-all text-slate-700 dark:text-slate-200 font-black">
                      {isProcessing ? <Loader2 size={20} className="animate-spin" /> : <Upload size={20} className="text-purple-600" />}
-                     <span>Select Backup File</span>
+                     <span>Import Backup File</span>
                    </button>
                  </div>
                  <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".json" className="hidden" />
@@ -658,15 +706,15 @@ const App: React.FC = () => {
           <button onClick={() => setActiveTab('history')} className={`flex flex-col items-center py-2 transition-all ${activeTab === 'history' ? 'text-blue-600 scale-110' : 'text-slate-400'}`}>
             <Clock size={28} strokeWidth={activeTab === 'history' ? 2.5 : 2} />
           </button>
-          <button onClick={() => setActiveTab('settings')} className={`flex flex-col items-center py-2 transition-all ${activeTab === 'settings' || activeTab === 'schedules' ? 'text-blue-600 scale-110' : 'text-slate-400'}`}>
-            <Settings size={28} strokeWidth={activeTab === 'settings' || activeTab === 'schedules' ? 2.5 : 2} />
+          <button onClick={() => setActiveTab('settings')} className={`flex flex-col items-center py-2 transition-all ${activeTab === 'settings' || activeTab === 'schedules' || activeTab === 'categories' ? 'text-blue-600 scale-110' : 'text-slate-400'}`}>
+            <Settings size={28} strokeWidth={activeTab === 'settings' || activeTab === 'schedules' || activeTab === 'categories' ? 2.5 : 2} />
           </button>
         </div>
       </div>
 
       <TransactionModal isOpen={isTxModalOpen} onClose={() => { setIsTxModalOpen(false); setEditingTransaction(null); }} onAdd={handleAddTransaction} onUpdate={handleUpdateTransaction} onDelete={handleDeleteTransaction} initialTransaction={editingTransaction} wallets={calculatedWallets} categories={state.categories} isDarkMode={state.isDarkMode} />
       <WalletModal isOpen={isWalletModalOpen} onClose={() => { setIsWalletModalOpen(false); setEditingWallet(null); }} onAdd={handleAddWallet} onUpdate={handleUpdateWallet} onDelete={handleDeleteWallet} initialWallet={editingWallet} availableTypes={state.walletTypes} isDarkMode={state.isDarkMode} />
-      <CategoryModal isOpen={isCategoryModalOpen} onClose={() => setIsCategoryModalOpen(false)} onAdd={handleAddCategory} isDarkMode={state.isDarkMode} />
+      <CategoryModal isOpen={isCategoryModalOpen} onClose={() => { setIsCategoryModalOpen(false); setEditingCategory(null); }} onAdd={handleAddCategory} onUpdate={handleUpdateCategory} onDelete={handleDeleteCategory} initialCategory={editingCategory} transactionCount={editingCategory ? transactionCountsPerCategory[editingCategory.id] : 0} isDarkMode={state.isDarkMode} />
       <ScheduleModal isOpen={isScheduleModalOpen} onClose={() => { setIsScheduleModalOpen(false); setEditingSchedule(null); }} onSave={handleAddSchedule} onUpdate={handleUpdateSchedule} initialSchedule={editingSchedule} wallets={calculatedWallets} categories={state.categories} isDarkMode={state.isDarkMode} />
     </div>
   );

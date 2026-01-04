@@ -57,7 +57,7 @@ export const storage = {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `zenwallet_backup_${new Date().toISOString().split('T')[0]}.json`;
+    link.download = `personalwallet_backup_${new Date().toISOString().split('T')[0]}.json`;
     link.click();
     URL.revokeObjectURL(url);
   },
@@ -72,7 +72,7 @@ export const storage = {
           const json = JSON.parse(content);
           
           if (!json.wallets && !json.transactions) {
-            throw new Error('This file does not appear to be a ZenWallet backup.');
+            throw new Error('This file does not appear to be a PersonalWallet backup.');
           }
 
           const current = storage.load();

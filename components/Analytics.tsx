@@ -233,10 +233,10 @@ export const Analytics: React.FC<AnalyticsProps> = ({ transactions, categories, 
           <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Daily Flow</h3>
           <div className="h-52 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={trendData} margin={{ top: 10, right: 10, bottom: 0, left: 0 }} tabIndex={-1}>
+              <AreaChart data={trendData} margin={{ top: 10, right: 10, bottom: 5, left: 0 }} tabIndex={-1}>
                 <defs>
-                  <linearGradient id="colInc" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#10b981" stopOpacity={0.2}/><stop offset="95%" stopColor="#10b981" stopOpacity={0}/></linearGradient>
-                  <linearGradient id="colExp" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2}/><stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/></linearGradient>
+                  <linearGradient id="colInc" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#10b981" stopOpacity={0.25}/><stop offset="95%" stopColor="#10b981" stopOpacity={0}/></linearGradient>
+                  <linearGradient id="colExp" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#3b82f6" stopOpacity={0.25}/><stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/></linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDarkMode ? '#1e293b' : '#f1f5f9'} />
                 <XAxis 
@@ -244,13 +244,14 @@ export const Analytics: React.FC<AnalyticsProps> = ({ transactions, categories, 
                   axisLine={false} 
                   tickLine={false} 
                   tick={{ fontSize: 9, fill: '#94a3b8', fontWeight: 'bold' }} 
-                  padding={{ left: 5, right: 5 }} 
-                  interval={4} // Force standard spacing: shows day 1, 6, 11, 16, 21, 26...
+                  padding={{ left: 10, right: 10 }} 
+                  interval={4} // Improved density for mobile
+                  minTickGap={10}
                 />
-                <YAxis hide />
+                <YAxis hide domain={['auto', 'auto']} />
                 <Tooltip content={<CustomTooltip isDarkMode={isDarkMode} hideAmounts={hideAmounts} />} />
-                <Area type="monotone" dataKey="income" stroke="#10b981" strokeWidth={3} fill="url(#colInc)" activeDot={{ r: 6, strokeWidth: 0 }} animationDuration={400} />
-                <Area type="monotone" dataKey="expense" stroke="#3b82f6" strokeWidth={3} fill="url(#colExp)" activeDot={{ r: 6, strokeWidth: 0 }} animationDuration={400} />
+                <Area type="monotone" dataKey="income" stroke="#10b981" strokeWidth={3} fill="url(#colInc)" dot={false} activeDot={{ r: 5, strokeWidth: 0 }} animationDuration={1000} />
+                <Area type="monotone" dataKey="expense" stroke="#3b82f6" strokeWidth={3} fill="url(#colExp)" dot={false} activeDot={{ r: 5, strokeWidth: 0 }} animationDuration={1000} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -262,7 +263,7 @@ export const Analytics: React.FC<AnalyticsProps> = ({ transactions, categories, 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {spendingByCategory.map(item => (
             <div 
-              key={item.name} 
+              key={item.id} 
               onClick={() => onTopExpenseClick(item.id)}
               className="bg-white dark:bg-slate-900 p-4 rounded-2xl flex items-center justify-between shadow-sm border border-slate-50 dark:border-slate-800 active:scale-[0.97] transition-all cursor-pointer"
             >
