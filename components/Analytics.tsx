@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, Sector } from 'recharts';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, ChevronDown } from 'lucide-react';
+import { PieChart, Pie, Cell, ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, ChevronDown, ListFilter } from 'lucide-react';
 import { Transaction, Category, TransactionType } from '../types';
 import { ICON_MAP } from '../constants';
 
@@ -35,41 +35,8 @@ const CustomTooltip = ({ active, payload, label, isDarkMode, hideAmounts }: any)
   return null;
 };
 
-const PieTooltip = ({ active, payload, isDarkMode, hideAmounts }: any) => {
-  if (active && payload && payload.length) {
-    const data = payload[0].payload;
-    return (
-      <div className={`p-3 rounded-2xl shadow-2xl border pointer-events-none select-none animate-in fade-in zoom-in duration-150 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'}`}>
-        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none">{data.name}</p>
-        <p className={`text-sm font-black ${isDarkMode ? 'text-white' : 'text-slate-900'} leading-none`}>
-          RM {hideAmounts ? "••••" : data.value.toFixed(2)}
-        </p>
-      </div>
-    );
-  }
-  return null;
-};
-
-const renderActiveShape = (props: any) => {
-  const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } = props;
-  return (
-    <g>
-      <Sector
-        cx={cx}
-        cy={cy}
-        innerRadius={innerRadius}
-        outerRadius={outerRadius + 4}
-        startAngle={startAngle}
-        endAngle={endAngle}
-        fill={fill}
-      />
-    </g>
-  );
-};
-
 export const Analytics: React.FC<AnalyticsProps> = ({ transactions, categories, isDarkMode, hideAmounts, onCategoryClick }) => {
   const [viewDate, setViewDate] = useState(new Date());
-  const [activeIndex, setActiveIndex] = useState<number | undefined>(undefined);
 
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const currentMonth = viewDate.getMonth();
@@ -123,15 +90,7 @@ export const Analytics: React.FC<AnalyticsProps> = ({ transactions, categories, 
     });
   }, [currentYear, currentMonth, expensesOnly, monthTransactions]);
 
-  const onPieEnter = (_: any, index: number) => {
-    setActiveIndex(index);
-  };
-
-  const onPieLeave = () => {
-    setActiveIndex(undefined);
-  };
-
-  const onTopExpenseClick = (catId: string) => {
+  const onCategoryItemClick = (catId: string) => {
     if (onCategoryClick) {
       onCategoryClick(catId, currentMonth, currentYear);
     }
@@ -188,50 +147,104 @@ export const Analytics: React.FC<AnalyticsProps> = ({ transactions, categories, 
         <button onClick={handleNext} className="h-14 w-14 rounded-2xl bg-white dark:bg-slate-900 flex items-center justify-center shadow-sm text-slate-400 active:scale-90"><ChevronRight size={22} strokeWidth={3} /></button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] shadow-sm space-y-6 overflow-visible">
-          <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Spending Profile</h3>
-          <div className="flex flex-col sm:flex-row items-center gap-8">
-            <div className="h-44 w-44 flex-shrink-0 relative">
-               <div className={`absolute inset-0 flex flex-col items-center justify-center z-10 text-center pointer-events-none transition-all duration-150 ${activeIndex !== undefined ? 'opacity-0 scale-90 blur-sm' : 'opacity-100 scale-100'}`}>
-                  <p className="text-[9px] font-black text-gray-400 uppercase mb-0.5">Total</p>
-                  <p className="text-sm font-black text-gray-900 dark:text-white leading-none">
-                    RM {hideAmounts ? "•••" : (totalSpend > 999 ? (totalSpend/1000).toFixed(1)+'k' : totalSpend.toFixed(0))}
+      <div className="grid grid-cols-1 gap-6">
+        {/* Spending Profile + Breakdown */}
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-[2.5rem] shadow-sm space-y-8">
+          <div className="flex items-center justify-between">
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Spending Profile</h3>
+            <div className="flex items-center gap-3">
+               <div className="text-right">
+                  <p className="text-[9px] font-black text-gray-400 uppercase leading-none">Net Savings</p>
+                  <p className={`text-sm font-black leading-none mt-1 ${totalIncome - totalSpend >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                    {hideAmounts ? "•••" : `RM ${(totalIncome - totalSpend).toFixed(0)}`}
                   </p>
                </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col md:flex-row items-center gap-10">
+            {/* Donut Area */}
+            <div className="h-48 w-48 flex-shrink-0 relative">
                <ResponsiveContainer width="100%" height="100%">
-                <PieChart margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
+                <PieChart tabIndex={-1}>
                   <Pie 
                     data={spendingByCategory.length > 0 ? spendingByCategory : [{value: 1, color: isDarkMode ? '#1e293b' : '#f8fafc'}]} 
-                    cx="50%" cy="50%" innerRadius={52} outerRadius={72} paddingAngle={4} dataKey="value" stroke="none"
-                    activeIndex={activeIndex}
-                    activeShape={renderActiveShape}
-                    onMouseEnter={onPieEnter}
-                    onMouseLeave={onPieLeave}
-                    tabIndex={-1}
+                    cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={2} dataKey="value" stroke="none"
+                    isAnimationActive={true}
+                    animationDuration={1500}
                   >
-                    {spendingByCategory.length > 0 ? spendingByCategory.map((entry, idx) => <Cell key={idx} fill={entry.color} style={{ outline: 'none' }} />) : <Cell fill={isDarkMode ? '#1e293b' : '#f8fafc'} />}
+                    {spendingByCategory.length > 0 
+                      ? spendingByCategory.map((entry, idx) => <Cell key={idx} fill={entry.color} />) 
+                      : <Cell fill={isDarkMode ? '#1e293b' : '#f8fafc'} />
+                    }
                   </Pie>
-                  <Tooltip content={<PieTooltip isDarkMode={isDarkMode} hideAmounts={hideAmounts} />} />
                 </PieChart>
               </ResponsiveContainer>
-            </div>
-            <div className="flex-1 space-y-4 w-full">
-              <div className="p-4 bg-emerald-50/50 dark:bg-emerald-900/10 rounded-2xl border border-emerald-50 dark:border-emerald-900/20">
-                <p className="text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mb-1">Income</p>
-                <p className="text-xl font-black text-emerald-500">RM {hideAmounts ? "••••" : totalIncome.toLocaleString()}</p>
-              </div>
-              <div className="p-4 bg-blue-50/50 dark:bg-blue-900/10 rounded-2xl border border-blue-50 dark:border-blue-900/20">
-                <p className="text-[9px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-1">Expenses</p>
-                <p className="text-xl font-black text-blue-600 dark:text-blue-400">RM {hideAmounts ? "••••" : totalSpend.toLocaleString()}</p>
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                <p className="text-[10px] font-black text-gray-400 uppercase mb-0.5">Expenses</p>
+                <p className="text-xl font-black text-gray-900 dark:text-white leading-none">
+                  {hideAmounts ? "••••" : `RM ${totalSpend.toFixed(0)}`}
+                </p>
               </div>
             </div>
+
+            {/* Breakdown List */}
+            <div className="flex-1 w-full space-y-4">
+               <div className="flex items-center gap-2 mb-2">
+                 <ListFilter size={14} className="text-blue-500" />
+                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Category Breakdown</span>
+               </div>
+               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[300px] overflow-y-auto no-scrollbar pr-1">
+                 {spendingByCategory.length === 0 ? (
+                   <div className="col-span-full py-10 text-center border-2 border-dashed border-slate-50 dark:border-slate-800 rounded-3xl">
+                     <p className="text-[10px] font-black text-slate-300 uppercase">No expenses recorded</p>
+                   </div>
+                 ) : (
+                   spendingByCategory.map(item => (
+                    <div 
+                      key={item.id} 
+                      onClick={() => onCategoryItemClick(item.id)}
+                      className="bg-slate-50/50 dark:bg-slate-800/50 p-3.5 rounded-2xl flex items-center justify-between border border-transparent active:border-blue-200 dark:active:border-blue-900 transition-all cursor-pointer group"
+                    >
+                      <div className="flex items-center gap-3 overflow-hidden">
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: `${item.color}15`, color: item.color }}>
+                          {ICON_MAP[item.icon]}
+                        </div>
+                        <div className="overflow-hidden">
+                          <p className="text-[11px] font-black text-slate-900 dark:text-white leading-none truncate mb-1">{item.name}</p>
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-12 h-1 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                              <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${(item.value / totalSpend) * 100}%`, backgroundColor: item.color }}></div>
+                            </div>
+                            <p className="text-[8px] text-slate-400 font-bold leading-none">{((item.value / totalSpend) * 100).toFixed(0)}%</p>
+                          </div>
+                        </div>
+                      </div>
+                      <p className="text-[11px] font-black text-slate-900 dark:text-white shrink-0 ml-2">RM {hideAmounts ? "•••" : item.value.toFixed(0)}</p>
+                    </div>
+                   ))
+                 )}
+               </div>
+            </div>
+          </div>
+          
+          {/* Summary Footer inside card */}
+          <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-50 dark:border-slate-800">
+              <div className="flex flex-col">
+                <p className="text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mb-1">Monthly Income</p>
+                <p className="text-lg font-black text-emerald-500">RM {hideAmounts ? "••••" : totalIncome.toLocaleString()}</p>
+              </div>
+              <div className="flex flex-col text-right">
+                <p className="text-[9px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-1">Monthly Expenses</p>
+                <p className="text-lg font-black text-blue-600 dark:text-blue-400">RM {hideAmounts ? "••••" : totalSpend.toLocaleString()}</p>
+              </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] shadow-sm">
-          <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Daily Flow</h3>
-          <div className="h-52 w-full">
+        {/* Daily Flow Chart */}
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-[2.5rem] shadow-sm">
+          <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Daily Cashflow</h3>
+          <div className="h-56 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={trendData} margin={{ top: 10, right: 10, bottom: 5, left: 0 }} tabIndex={-1}>
                 <defs>
@@ -245,7 +258,7 @@ export const Analytics: React.FC<AnalyticsProps> = ({ transactions, categories, 
                   tickLine={false} 
                   tick={{ fontSize: 9, fill: '#94a3b8', fontWeight: 'bold' }} 
                   padding={{ left: 10, right: 10 }} 
-                  interval={4} // Improved density for mobile
+                  interval={4}
                   minTickGap={10}
                 />
                 <YAxis hide domain={['auto', 'auto']} />
@@ -255,35 +268,6 @@ export const Analytics: React.FC<AnalyticsProps> = ({ transactions, categories, 
               </AreaChart>
             </ResponsiveContainer>
           </div>
-        </div>
-      </div>
-
-      <div className="space-y-3">
-        <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest px-1">Top Expenses</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {spendingByCategory.map(item => (
-            <div 
-              key={item.id} 
-              onClick={() => onTopExpenseClick(item.id)}
-              className="bg-white dark:bg-slate-900 p-4 rounded-2xl flex items-center justify-between shadow-sm border border-slate-50 dark:border-slate-800 active:scale-[0.97] transition-all cursor-pointer"
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${item.color}15`, color: item.color }}>
-                  {ICON_MAP[item.icon]}
-                </div>
-                <div>
-                  <p className="text-xs font-black text-slate-900 dark:text-white leading-none mb-1.5">{item.name}</p>
-                  <div className="flex items-center gap-2">
-                    <div className="w-16 h-1.5 bg-slate-50 dark:bg-slate-800 rounded-full overflow-hidden">
-                      <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${(item.value / totalSpend) * 100}%`, backgroundColor: item.color }}></div>
-                    </div>
-                    <p className="text-[9px] text-slate-400 font-bold">{((item.value / totalSpend) * 100).toFixed(0)}%</p>
-                  </div>
-                </div>
-              </div>
-              <p className="text-xs font-black text-slate-900 dark:text-white">RM {hideAmounts ? "•••" : item.value.toFixed(0)}</p>
-            </div>
-          ))}
         </div>
       </div>
     </div>
