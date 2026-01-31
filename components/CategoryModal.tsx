@@ -162,7 +162,7 @@ export const CategoryModal: React.FC<CategoryModalProps> = ({
             <button 
               type="button"
               onClick={handleDelete} 
-              className={`w-full h-14 rounded-2xl font-black flex items-center justify-center gap-3 border-2 transition-all active:scale-[0.98] mt-2 ${confirmDelete ? 'bg-red-600 border-red-600 text-white animate-pulse' : 'bg-transparent border-red-100 dark:border-red-900/10 text-red-500 hover:bg-red-50'}`}
+              className={`w-full h-14 rounded-2xl font-black flex items-center justify-center gap-3 border-2 transition-all active:scale-[0.98] mt-2 ${confirmDelete ? 'bg-red-600 border-red-600 text-white animate-pulse' : 'bg-transparent border-red-50 text-red-500 hover:bg-red-50 dark:border-red-900/10'}`}
             >
               {confirmDelete ? <AlertTriangle size={18} /> : <Trash2 size={18} />}
               <span>{confirmDelete ? 'Tap to Confirm' : 'Delete Category'}</span>

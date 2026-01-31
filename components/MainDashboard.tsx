@@ -1,6 +1,7 @@
 
-import React, { useState } from 'react';
-import { Plus, Wallet as WalletIcon, ArrowRightLeft, Eye, EyeOff, ChevronDown, ChevronUp } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Plus, Wallet as WalletIcon, ArrowRightLeft, Eye, EyeOff, ChevronDown, ChevronUp, PieChart as PieIcon } from 'lucide-react';
+import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { Wallet, Transaction, Category, TransactionType } from '../types';
 import { ICON_MAP } from '../constants';
 
@@ -32,10 +33,7 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({
   const [isWalletsExpanded, setIsWalletsExpanded] = useState(false);
   const totalBalance = wallets.reduce((acc, curr) => acc + curr.balance, 0);
   
-  // Requirement: Show only latest 5 transactions
   const recentTransactions = [...transactions].sort((a, b) => b.date - a.date).slice(0, 5);
-  
-  // Requirement: Show only 3 wallets by default with a toggle
   const visibleWallets = isWalletsExpanded ? wallets : wallets.slice(0, 3);
   
   const getWalletName = (id: string) => wallets.find(w => w.id === id)?.name || 'Deleted Wallet';
@@ -44,6 +42,20 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({
     if (hideAmounts) return "••••••";
     return amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
+
+  // Distribution Chart Data (Only positive balances)
+  const chartData = useMemo(() => {
+    return wallets
+      .filter(w => w.balance > 0)
+      .map(w => ({
+        name: w.name,
+        value: w.balance,
+        color: w.color
+      }))
+      .sort((a, b) => b.value - a.value);
+  }, [wallets]);
+
+  const totalPositiveBalance = chartData.reduce((sum, item) => sum + item.value, 0);
 
   return (
     <div className="p-4 sm:p-6 space-y-6 sm:space-y-8 pb-40">
@@ -92,6 +104,69 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({
         </div>
       </div>
 
+      {/* Asset Allocation Chart */}
+      {chartData.length > 0 && (
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-[2.5rem] shadow-sm space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500 border border-slate-50 dark:border-slate-800">
+          <div className="flex items-center justify-between px-1">
+            <div className="flex items-center gap-2">
+              <PieIcon size={14} className="text-blue-500" />
+              <h3 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Asset Allocation</h3>
+            </div>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+              {chartData.length} Source{chartData.length > 1 ? 's' : ''}
+            </p>
+          </div>
+          
+          <div className="flex flex-col sm:flex-row items-center gap-6">
+            <div className="h-40 w-40 shrink-0 relative">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={chartData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={70}
+                    paddingAngle={3}
+                    dataKey="value"
+                    stroke="none"
+                    isAnimationActive={true}
+                    animationDuration={1000}
+                  >
+                    {chartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                <p className="text-[8px] font-black text-slate-400 uppercase">Assets</p>
+                <p className="text-xs font-black text-slate-900 dark:text-white">Positive</p>
+              </div>
+            </div>
+            
+            <div className="flex-1 w-full space-y-2">
+              {chartData.slice(0, 4).map((item, idx) => (
+                <div key={idx} className="flex items-center justify-between text-[11px] font-bold">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
+                    <span className="text-slate-600 dark:text-slate-400 truncate max-w-[100px]">{item.name}</span>
+                  </div>
+                  <span className="text-slate-900 dark:text-slate-200">
+                    {((item.value / totalPositiveBalance) * 100).toFixed(1)}%
+                  </span>
+                </div>
+              ))}
+              {chartData.length > 4 && (
+                <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest pt-1">
+                  + {chartData.length - 4} More Wallets
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 items-start">
         
         {/* Wallets Section */}
@@ -114,20 +189,20 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({
                   <div 
                     key={wallet.id} 
                     onClick={() => onEditWallet(wallet)}
-                    className="p-4 rounded-[1.5rem] bg-white dark:bg-slate-900 border border-slate-50 dark:border-slate-800 shadow-sm active:scale-[0.98] transition-all cursor-pointer group"
+                    className="p-4 rounded-[1.5rem] bg-white dark:bg-slate-900 border border-slate-50 dark:border-slate-800 shadow-sm transition-all active:scale-[0.98] cursor-pointer"
                   >
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-inner" style={{ backgroundColor: `${wallet.color}15`, color: wallet.color }}>
+                      <div className="flex items-center gap-4 min-w-0">
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-inner shrink-0" style={{ backgroundColor: `${wallet.color}15`, color: wallet.color }}>
                           <WalletIcon size={18} />
                         </div>
-                        <div>
+                        <div className="min-w-0">
                           <p className="text-slate-400 text-[9px] font-black uppercase tracking-tighter leading-none mb-1">{wallet.type}</p>
-                          <h4 className="text-sm font-black text-slate-900 dark:text-slate-100 truncate w-32">{wallet.name}</h4>
+                          <h4 className="text-sm font-black text-slate-900 dark:text-slate-100 truncate w-40">{wallet.name}</h4>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-base font-black text-slate-900 dark:text-slate-100">
+                        <p className={`text-base font-black ${wallet.balance < 0 ? 'text-red-500' : 'text-slate-900 dark:text-slate-100'}`}>
                           {hideAmounts ? "••••" : `RM ${wallet.balance.toFixed(2)}`}
                         </p>
                       </div>

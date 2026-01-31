@@ -50,8 +50,8 @@ export const storage = {
       return defaultState;
     }
   },
-  exportData: () => {
-    const data = localStorage.getItem(STORAGE_KEY);
+  exportData: (dataStr?: string) => {
+    const data = dataStr || localStorage.getItem(STORAGE_KEY);
     if (!data) return;
     const blob = new Blob([data], { type: 'application/json' });
     const url = URL.createObjectURL(blob);

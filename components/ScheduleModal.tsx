@@ -73,7 +73,8 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
 
     if (shouldRecalculate) {
       const now = new Date();
-      const calcDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 9, 0, 0);
+      // Set to current time today as base for next run
+      const calcDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), now.getMinutes(), 0);
 
       if (frequency === Frequency.MONTHLY) {
         const lastDayOfThisMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();

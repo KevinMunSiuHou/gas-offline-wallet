@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { X, Trash2, AlertTriangle, ChevronDown, CheckCircle2 } from 'lucide-react';
+import { X, Trash2, AlertTriangle, ChevronDown, CheckCircle2, Edit2, AlertCircle } from 'lucide-react';
 import { Wallet } from '../types';
 
 interface WalletModalProps {
@@ -22,6 +22,7 @@ export const WalletModal: React.FC<WalletModalProps> = ({
   const [balance, setBalance] = useState('');
   const [color, setColor] = useState('#3b82f6');
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [isBalanceEditable, setIsBalanceEditable] = useState(false);
 
   useEffect(() => {
     if (initialWallet) {
@@ -29,11 +30,13 @@ export const WalletModal: React.FC<WalletModalProps> = ({
       setType(initialWallet.type);
       setBalance(initialWallet.balance.toString());
       setColor(initialWallet.color);
+      setIsBalanceEditable(false); // Locked by default for editing existing
     } else {
       setName('');
       setType('Bank Account');
       setBalance('');
       setColor('#3b82f6');
+      setIsBalanceEditable(true); // Open by default for new wallets
     }
     setConfirmDelete(false);
   }, [initialWallet, isOpen]);
@@ -96,11 +99,35 @@ export const WalletModal: React.FC<WalletModalProps> = ({
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Current Balance</label>
-              <div className="relative">
-                <span className="absolute left-5 top-1/2 -translate-y-1/2 font-black text-slate-400 text-sm">RM</span>
-                <input type="number" step="0.01" className={`${inputCls} pl-12`} value={balance} onChange={e => setBalance(e.target.value)} placeholder="0.00" />
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Initial Balance</label>
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <span className="absolute left-5 top-1/2 -translate-y-1/2 font-black text-slate-400 text-sm">RM</span>
+                  <input 
+                    type="number" 
+                    step="0.01" 
+                    className={`${inputCls} pl-12 transition-all ${!isBalanceEditable ? 'opacity-40 select-none' : 'opacity-100'}`} 
+                    value={balance} 
+                    onChange={e => setBalance(e.target.value)} 
+                    placeholder="0.00" 
+                    readOnly={!isBalanceEditable}
+                  />
+                </div>
+                {initialWallet && (
+                  <button 
+                    type="button" 
+                    onClick={() => setIsBalanceEditable(!isBalanceEditable)}
+                    className={`h-14 w-14 shrink-0 rounded-2xl flex items-center justify-center transition-all active:scale-90 border-2 ${isBalanceEditable ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-600/20' : 'bg-slate-50 dark:bg-slate-800 border-transparent text-slate-400'}`}
+                  >
+                    <Edit2 size={18} />
+                  </button>
+                )}
               </div>
+              {!isBalanceEditable && initialWallet && (
+                <p className="text-[9px] font-bold text-slate-400 italic ml-1 flex items-center gap-1.5">
+                  <AlertCircle size={10} /> This is the starting balance of the account
+                </p>
+              )}
             </div>
 
             <div className="space-y-3 pt-2">

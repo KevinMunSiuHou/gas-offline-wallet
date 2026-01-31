@@ -1,16 +1,18 @@
 
 import React, { useState, useMemo } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, ChevronDown, ChevronUp, ListFilter } from 'lucide-react';
-import { Transaction, Category, TransactionType } from '../types';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, ChevronDown, ChevronUp, ListFilter, Wallet as WalletIcon } from 'lucide-react';
+import { Transaction, Category, TransactionType, Wallet } from '../types';
 import { ICON_MAP } from '../constants';
 
 interface AnalyticsProps {
   transactions: Transaction[];
   categories: Category[];
+  wallets: Wallet[];
   isDarkMode?: boolean;
   hideAmounts?: boolean;
   onCategoryClick?: (catId: string, month: number, year: number) => void;
+  onWalletClick?: (walletId: string, month: number, year: number) => void;
 }
 
 const CustomTooltip = ({ active, payload, label, isDarkMode, hideAmounts }: any) => {
@@ -35,9 +37,10 @@ const CustomTooltip = ({ active, payload, label, isDarkMode, hideAmounts }: any)
   return null;
 };
 
-export const Analytics: React.FC<AnalyticsProps> = ({ transactions, categories, isDarkMode, hideAmounts, onCategoryClick }) => {
+export const Analytics: React.FC<AnalyticsProps> = ({ transactions, categories, wallets, isDarkMode, hideAmounts, onCategoryClick, onWalletClick }) => {
   const [viewDate, setViewDate] = useState(new Date());
   const [isBreakdownExpanded, setIsBreakdownExpanded] = useState(false);
+  const [isWalletExpanded, setIsWalletExpanded] = useState(false);
 
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const currentMonth = viewDate.getMonth();
@@ -79,7 +82,19 @@ export const Analytics: React.FC<AnalyticsProps> = ({ transactions, categories, 
       .sort((a, b) => b.value - a.value);
   }, [categories, expensesOnly]);
 
+  const spendingByWallet = useMemo(() => {
+    return wallets.map(wallet => ({
+      id: wallet.id,
+      name: wallet.name,
+      value: expensesOnly.filter(t => t.walletId === wallet.id).reduce((sum, t) => sum + t.amount, 0),
+      color: wallet.color
+    }))
+    .filter(d => d.value > 0)
+    .sort((a, b) => b.value - a.value);
+  }, [wallets, expensesOnly]);
+
   const displayedBreakdown = isBreakdownExpanded ? spendingByCategory : spendingByCategory.slice(0, 3);
+  const displayedWalletSpending = isWalletExpanded ? spendingByWallet : spendingByWallet.slice(0, 3);
 
   const trendData = useMemo(() => {
     const days = new Date(currentYear, currentMonth + 1, 0).getDate();
@@ -96,6 +111,12 @@ export const Analytics: React.FC<AnalyticsProps> = ({ transactions, categories, 
   const onCategoryItemClick = (catId: string) => {
     if (onCategoryClick) {
       onCategoryClick(catId, currentMonth, currentYear);
+    }
+  };
+
+  const onWalletItemClick = (walletId: string) => {
+    if (onWalletClick) {
+      onWalletClick(walletId, currentMonth, currentYear);
     }
   };
 
@@ -155,13 +176,11 @@ export const Analytics: React.FC<AnalyticsProps> = ({ transactions, categories, 
         <div className="bg-white dark:bg-slate-900 p-6 rounded-[2.5rem] shadow-sm space-y-8">
           <div className="flex items-center justify-between">
             <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Spending Profile</h3>
-            <div className="flex items-center gap-3">
-               <div className="text-right">
-                  <p className="text-[9px] font-black text-gray-400 uppercase leading-none">Net Savings</p>
-                  <p className={`text-sm font-black leading-none mt-1 ${totalIncome - totalSpend >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
-                    {hideAmounts ? "•••" : `RM ${(totalIncome - totalSpend).toFixed(0)}`}
-                  </p>
-               </div>
+            <div className="text-right">
+              <p className="text-[9px] font-black text-gray-400 uppercase leading-none">Net Savings</p>
+              <p className={`text-sm font-black leading-none mt-1 ${totalIncome - totalSpend >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                {hideAmounts ? "•••" : `RM ${(totalIncome - totalSpend).toFixed(0)}`}
+              </p>
             </div>
           </div>
 
@@ -193,11 +212,9 @@ export const Analytics: React.FC<AnalyticsProps> = ({ transactions, categories, 
 
             {/* Breakdown List */}
             <div className="flex-1 w-full space-y-4">
-               <div className="flex items-center justify-between mb-2">
-                 <div className="flex items-center gap-2">
-                   <ListFilter size={14} className="text-blue-500" />
-                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Category Breakdown</span>
-                 </div>
+               <div className="flex items-center gap-2 mb-2">
+                 <ListFilter size={14} className="text-blue-500" />
+                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Category Breakdown</span>
                </div>
                
                <div className="space-y-3">
@@ -207,8 +224,8 @@ export const Analytics: React.FC<AnalyticsProps> = ({ transactions, categories, 
                    </div>
                  ) : (
                    <>
-                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                       {displayedBreakdown.map(item => (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {displayedBreakdown.map(item => (
                         <div 
                           key={item.id} 
                           onClick={() => onCategoryItemClick(item.id)}
@@ -230,28 +247,26 @@ export const Analytics: React.FC<AnalyticsProps> = ({ transactions, categories, 
                           </div>
                           <p className="text-[11px] font-black text-slate-900 dark:text-white shrink-0 ml-2">RM {hideAmounts ? "•••" : item.value.toFixed(0)}</p>
                         </div>
-                       ))}
-                     </div>
-                     
-                     {spendingByCategory.length > 3 && (
-                       <button 
-                         onClick={() => setIsBreakdownExpanded(!isBreakdownExpanded)}
-                         className="w-full h-12 flex items-center justify-center gap-2 bg-slate-50 dark:bg-slate-800/50 rounded-2xl text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest active:scale-[0.98] transition-all"
-                       >
-                         {isBreakdownExpanded ? (
-                           <>Show Less <ChevronUp size={14} strokeWidth={3} /></>
-                         ) : (
-                           <>Show All Categories ({spendingByCategory.length}) <ChevronDown size={14} strokeWidth={3} /></>
-                         )}
-                       </button>
-                     )}
+                      ))}
+                    </div>
+                    {spendingByCategory.length > 3 && (
+                      <button 
+                        onClick={() => setIsBreakdownExpanded(!isBreakdownExpanded)}
+                        className="w-full h-11 flex items-center justify-center gap-2 bg-slate-50 dark:bg-slate-800 rounded-xl text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest active:scale-95 transition-all mt-2"
+                      >
+                        {isBreakdownExpanded ? (
+                          <>Show Less <ChevronUp size={14} /></>
+                        ) : (
+                          <>Show All ({spendingByCategory.length}) <ChevronDown size={14} /></>
+                        )}
+                      </button>
+                    )}
                    </>
                  )}
                </div>
             </div>
           </div>
           
-          {/* Summary Footer inside card */}
           <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-50 dark:border-slate-800">
               <div className="flex flex-col">
                 <p className="text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mb-1">Monthly Income</p>
@@ -261,6 +276,62 @@ export const Analytics: React.FC<AnalyticsProps> = ({ transactions, categories, 
                 <p className="text-[9px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-1">Monthly Expenses</p>
                 <p className="text-lg font-black text-blue-600 dark:text-blue-400">RM {hideAmounts ? "••••" : totalSpend.toLocaleString()}</p>
               </div>
+          </div>
+        </div>
+
+        {/* Spending based on Wallet */}
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-[2.5rem] shadow-sm space-y-6">
+          <div className="flex items-center gap-2">
+            <WalletIcon size={14} className="text-blue-500" />
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Spending by Wallet</h3>
+          </div>
+          
+          <div className="space-y-3">
+            {spendingByWallet.length === 0 ? (
+              <div className="py-10 text-center border-2 border-dashed border-slate-50 dark:border-slate-800 rounded-3xl">
+                <p className="text-[10px] font-black text-slate-300 uppercase">No wallet expenses recorded</p>
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {displayedWalletSpending.map(item => (
+                    <div 
+                      key={item.id} 
+                      onClick={() => onWalletItemClick(item.id)}
+                      className="bg-slate-50/50 dark:bg-slate-800/50 p-4 rounded-2xl flex items-center justify-between border border-transparent active:border-blue-200 dark:active:border-blue-900 transition-all cursor-pointer group"
+                    >
+                      <div className="flex items-center gap-3 overflow-hidden">
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: `${item.color}15`, color: item.color }}>
+                          <WalletIcon size={18} />
+                        </div>
+                        <div className="overflow-hidden">
+                          <p className="text-[11px] font-black text-slate-900 dark:text-white leading-none truncate mb-1">{item.name}</p>
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-16 h-1 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                              <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${(item.value / totalSpend) * 100}%`, backgroundColor: item.color }}></div>
+                            </div>
+                            <p className="text-[8px] text-slate-400 font-bold leading-none">{((item.value / totalSpend) * 100).toFixed(0)}%</p>
+                          </div>
+                        </div>
+                      </div>
+                      <p className="text-[11px] font-black text-slate-900 dark:text-white shrink-0 ml-2">RM {hideAmounts ? "•••" : item.value.toFixed(0)}</p>
+                    </div>
+                  ))}
+                </div>
+                {spendingByWallet.length > 3 && (
+                  <button 
+                    onClick={() => setIsWalletExpanded(!isWalletExpanded)}
+                    className="w-full h-11 flex items-center justify-center gap-2 bg-slate-50 dark:bg-slate-800 rounded-xl text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest active:scale-95 transition-all mt-2"
+                  >
+                    {isWalletExpanded ? (
+                      <>Show Less <ChevronUp size={14} /></>
+                    ) : (
+                      <>Show All ({spendingByWallet.length}) <ChevronDown size={14} /></>
+                    )}
+                  </button>
+                )}
+              </>
+            )}
           </div>
         </div>
 

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { Home, PieChart, Plus, Settings, Wallet as WalletIcon, ArrowLeft, Search, ArrowRightLeft, Clock, Download, Upload, ShieldCheck, Loader2, CheckCircle2, Moon, Sun, AlertCircle, RefreshCw, Filter, ArrowUpDown, Tag, CalendarClock, Eye, EyeOff, X, Copy } from 'lucide-react';
+import { Home, PieChart, Plus, Settings, Wallet as WalletIcon, ArrowLeft, Search, ArrowRightLeft, Clock, Download, Upload, ShieldCheck, Loader2, CheckCircle2, Moon, Sun, AlertCircle, RefreshCw, Filter, ArrowUpDown, Tag, CalendarClock, Eye, EyeOff, X, Copy, Calendar, ChevronDown } from 'lucide-react';
 import { AppState, Wallet, Transaction, Category, TransactionType, Schedule, Frequency } from './types';
 import { storage } from './services/storage';
 import { MainDashboard } from './components/MainDashboard';
@@ -17,8 +17,9 @@ type SortType = 'date-desc' | 'date-asc' | 'amount-desc' | 'amount-asc';
 
 interface HistoryFilter {
   categoryId?: string;
-  month?: number;
-  year?: number;
+  walletId?: string;
+  month?: number; // 0-11
+  year?: number;  // YYYY
 }
 
 const App: React.FC = () => {
@@ -26,6 +27,7 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'home' | 'analytics' | 'history' | 'settings' | 'schedules' | 'categories'>('home');
   const [isProcessing, setIsProcessing] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('Data Restored Successfully!');
   
   const [pendingRestoreData, setPendingRestoreData] = useState<AppState | null>(null);
   const [isTxModalOpen, setIsTxModalOpen] = useState(false);
@@ -39,8 +41,18 @@ const App: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortType, setSortType] = useState<SortType>('date-desc');
   const [historyFilter, setHistoryFilter] = useState<HistoryFilter | null>(null);
+  const [showFilterOptions, setShowFilterOptions] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const availableYears = useMemo(() => {
+    const years = new Set<number>();
+    years.add(new Date().getFullYear());
+    state.transactions.forEach(t => years.add(new Date(t.date).getFullYear()));
+    return Array.from(years).sort((a, b) => b - a);
+  }, [state.transactions]);
+
+  const monthsList = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
   const processSchedules = useCallback(() => {
     const nowTimestamp = Date.now();
@@ -235,7 +247,6 @@ const App: React.FC = () => {
     setState(prev => ({
       ...prev,
       categories: prev.categories.filter(c => c.id !== id),
-      // Clean up transactions linked to this category
       transactions: prev.transactions.map(tx => tx.categoryId === id ? { ...tx, categoryId: undefined } : tx)
     }));
     setEditingCategory(null);
@@ -318,34 +329,57 @@ const App: React.FC = () => {
   };
 
   const handleExportData = async () => {
-    const data = storage.load();
-    const jsonString = JSON.stringify(data, null, 2);
+    storage.save(state);
+    const jsonString = JSON.stringify(state, null, 2);
     const dateStr = new Date().toISOString().split('T')[0];
     const fileName = `personalwallet_backup_${dateStr}.json`;
 
     if (navigator.share) {
       try {
         const file = new File([jsonString], fileName, { type: 'application/json' });
-        await navigator.share({
-          files: [file],
-          title: 'PersonalWallet Backup',
-          text: `Financial Snapshot from ${dateStr}`
-        });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: 'PersonalWallet Backup',
+            text: `Finance Backup (${dateStr})`
+          });
+          return;
+        } else {
+          await navigator.share({
+            title: 'PersonalWallet Backup JSON',
+            text: jsonString
+          });
+          return;
+        }
       } catch (err) {
-        // Fallback for APK environments with restricted file sharing
-        await copyToClipboard(jsonString);
+        console.warn("Native share failed, attempting fallback", err);
       }
-    } else {
-      storage.exportData();
+    }
+
+    try {
+      storage.exportData(jsonString);
+    } catch (err) {
+      await copyToClipboard(jsonString);
     }
   };
 
   const copyToClipboard = async (text: string) => {
     try {
-      await navigator.clipboard.writeText(text);
-      alert('Share blocked by system. Backup data copied to clipboard as text. You can save this to a notes app!');
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+      }
+      setSuccessMessage('Data copied to clipboard!');
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
     } catch (err) {
-      storage.exportData();
+      alert('Unable to copy to clipboard or share. Please check app permissions.');
     }
   };
 
@@ -356,10 +390,11 @@ const App: React.FC = () => {
         
         if (historyFilter) {
           if (historyFilter.categoryId && tx.categoryId !== historyFilter.categoryId) return false;
-          if (historyFilter.month !== undefined && historyFilter.year !== undefined) {
-            const d = new Date(tx.date);
-            if (d.getMonth() !== historyFilter.month || d.getFullYear() !== historyFilter.year) return false;
-          }
+          if (historyFilter.walletId && tx.walletId !== historyFilter.walletId) return false;
+          
+          const d = new Date(tx.date);
+          if (historyFilter.year !== undefined && d.getFullYear() !== historyFilter.year) return false;
+          if (historyFilter.month !== undefined && d.getMonth() !== historyFilter.month) return false;
         }
 
         const matchesSearch = tx.note.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -397,6 +432,11 @@ const App: React.FC = () => {
     setActiveTab('history');
   };
 
+  const navigateToFilteredWalletHistory = (walletId: string, month: number, year: number) => {
+    setHistoryFilter({ walletId, month, year });
+    setActiveTab('history');
+  };
+
   const executeRestore = () => {
     if (!pendingRestoreData) return;
     setIsProcessing(true);
@@ -406,6 +446,7 @@ const App: React.FC = () => {
         storage.save(pendingRestoreData);
         setPendingRestoreData(null);
         setIsProcessing(false);
+        setSuccessMessage('Data Restored Successfully!');
         setShowSuccess(true);
         setTimeout(() => setShowSuccess(false), 3000);
         setActiveTab('home');
@@ -414,6 +455,18 @@ const App: React.FC = () => {
         alert('Restore Failed: ' + (err instanceof Error ? err.message : 'Storage error.'));
       }
     }, 400);
+  };
+
+  const updateFilter = (updates: Partial<HistoryFilter>) => {
+    setHistoryFilter(prev => {
+      const current = prev || {};
+      return { ...current, ...updates };
+    });
+  };
+
+  const clearAllFilters = () => {
+    setHistoryFilter(null);
+    setSearchQuery('');
   };
 
   return (
@@ -438,7 +491,7 @@ const App: React.FC = () => {
         <div className="fixed top-8 left-1/2 -translate-x-1/2 z-[101] animate-in slide-in-from-top-4 duration-300">
           <div className="bg-emerald-500 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3">
             <CheckCircle2 size={20} />
-            <span className="font-bold text-sm">Data Restored Successfully!</span>
+            <span className="font-bold text-sm">{successMessage}</span>
           </div>
         </div>
       )}
@@ -450,7 +503,11 @@ const App: React.FC = () => {
             transactions={state.transactions} 
             categories={state.categories}
             onAddWallet={() => setIsWalletModalOpen(true)}
-            onEditWallet={(w) => { setEditingWallet(w); setIsWalletModalOpen(true); }}
+            onEditWallet={(w) => { 
+              const rawWallet = state.wallets.find(rw => rw.id === w.id);
+              setEditingWallet(rawWallet || w); 
+              setIsWalletModalOpen(true); 
+            }}
             onEditTransaction={(tx) => { setEditingTransaction(tx); setIsTxModalOpen(true); }}
             onSeeAll={() => { setHistoryFilter(null); setActiveTab('history'); }}
             isDarkMode={state.isDarkMode}
@@ -461,27 +518,85 @@ const App: React.FC = () => {
 
         {activeTab === 'history' && (
           <div className="p-6 space-y-4 pb-12">
-            <div className="flex items-center gap-4">
-              <button onClick={() => { setHistoryFilter(null); setActiveTab('home'); }} className="p-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm text-slate-500 dark:text-slate-400 active:scale-95 transition-all">
-                <ArrowLeft size={20} />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <button onClick={() => { clearAllFilters(); setActiveTab('home'); }} className="p-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm text-slate-500 dark:text-slate-400 active:scale-95 transition-all">
+                  <ArrowLeft size={20} />
+                </button>
+                <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100">History</h1>
+              </div>
+              <button 
+                onClick={() => setShowFilterOptions(!showFilterOptions)} 
+                className={`p-2.5 rounded-xl border transition-all active:scale-95 ${showFilterOptions ? 'bg-blue-600 border-blue-600 text-white shadow-lg' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-400'}`}
+              >
+                <Filter size={20} />
               </button>
-              <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100">History</h1>
             </div>
             
-            {historyFilter && (
-              <div className="bg-blue-600 p-4 rounded-2xl text-white flex items-center justify-between shadow-lg animate-in slide-in-from-top-2 duration-300">
-                <div className="flex items-center gap-3">
-                  <Tag size={18} className="opacity-70" />
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-widest opacity-70">Filtering Category</p>
-                    <p className="font-bold text-sm">
-                      {state.categories.find(c => c.id === historyFilter.categoryId)?.name || 'Filtered List'}
-                      <span className="opacity-60 font-medium ml-2">({new Date(historyFilter.year!, historyFilter.month!).toLocaleString('en-GB', { month: 'short', year: 'numeric' })})</span>
-                    </p>
+            {showFilterOptions && (
+              <div className="space-y-4 p-4 bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm animate-in slide-in-from-top-2 duration-300">
+                <div className="space-y-2">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Period Selection</p>
+                  <div className="h-14 bg-slate-50 dark:bg-slate-800 rounded-2xl flex items-center px-4 gap-2 border border-transparent overflow-hidden">
+                    {/* Month Select */}
+                    <div className="flex-1 relative flex items-center justify-center">
+                      <select 
+                        value={historyFilter?.month !== undefined ? historyFilter.month : -1} 
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value);
+                          updateFilter({ month: val === -1 ? undefined : val });
+                        }} 
+                        className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                      >
+                        <option value={-1}>All Months</option>
+                        {monthsList.map((m, i) => <option key={m} value={i}>{m}</option>)}
+                      </select>
+                      <span className={`text-xs font-black uppercase tracking-widest pointer-events-none ${historyFilter?.month !== undefined ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500'}`}>
+                        {historyFilter?.month !== undefined ? monthsList[historyFilter.month] : 'All Months'}
+                      </span>
+                      <ChevronDown size={14} className="ml-1.5 text-slate-300 pointer-events-none" />
+                    </div>
+
+                    <div className="w-[1px] h-6 bg-slate-200 dark:bg-slate-700 shrink-0" />
+
+                    {/* Year Select */}
+                    <div className="flex-1 relative flex items-center justify-center">
+                      <select 
+                        value={historyFilter?.year !== undefined ? historyFilter.year : -1} 
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value);
+                          updateFilter({ year: val === -1 ? undefined : val });
+                        }} 
+                        className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                      >
+                        <option value={-1}>All Years</option>
+                        {availableYears.map(year => <option key={year} value={year}>{year}</option>)}
+                      </select>
+                      <span className={`text-xs font-black pointer-events-none ${historyFilter?.year !== undefined ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500'}`}>
+                        {historyFilter?.year !== undefined ? historyFilter.year : 'All Years'}
+                      </span>
+                      <ChevronDown size={14} className="ml-1.5 text-slate-300 pointer-events-none" />
+                    </div>
                   </div>
                 </div>
-                <button onClick={() => setHistoryFilter(null)} className="p-2 hover:bg-white/20 rounded-full transition-all">
-                  <X size={18} />
+
+                {(historyFilter?.categoryId || historyFilter?.walletId) && (
+                  <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-2xl flex items-center justify-between animate-in fade-in duration-300">
+                    <div className="flex items-center gap-3">
+                      <Tag size={14} className="text-blue-600" />
+                      <p className="text-[10px] font-black text-blue-800 dark:text-blue-300 uppercase tracking-widest">
+                        {historyFilter?.categoryId ? 'Filtered Category' : 'Filtered Wallet'}
+                      </p>
+                    </div>
+                    <button onClick={() => updateFilter({ categoryId: undefined, walletId: undefined })} className="p-1 text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-800/40 rounded-full transition-colors"><X size={14} /></button>
+                  </div>
+                )}
+
+                <button 
+                  onClick={clearAllFilters}
+                  className="w-full h-12 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                >
+                  <RefreshCw size={14} /> Clear All Filters
                 </button>
               </div>
             )}
@@ -491,7 +606,7 @@ const App: React.FC = () => {
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                 <input 
                   type="text" 
-                  placeholder="Search..." 
+                  placeholder="Search note or category..." 
                   className="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-slate-100 transition-all font-medium"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -511,6 +626,7 @@ const App: React.FC = () => {
                 <div className="text-center py-20 opacity-30 dark:opacity-20 flex flex-col items-center">
                   <Search size={64} className="mb-4 text-slate-300" />
                   <p className="font-bold text-lg">No records found</p>
+                  <p className="text-xs mt-1">Try changing your filters or search terms</p>
                 </div>
               ) : (
                 filteredHistory.map(tx => {
@@ -547,7 +663,6 @@ const App: React.FC = () => {
                         }`}>
                           {state.hideAmounts ? 'RM ••••' : `${tx.type === TransactionType.EXPENSE ? '-' : tx.type === TransactionType.INCOME ? '+' : ''} RM ${tx.amount.toFixed(2)}`}
                         </p>
-                        <p className="text-[9px] text-slate-400 font-bold">{new Date(tx.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                       </div>
                     </div>
                   );
@@ -562,9 +677,11 @@ const App: React.FC = () => {
             <Analytics 
               transactions={state.transactions} 
               categories={state.categories} 
+              wallets={calculatedWallets}
               isDarkMode={state.isDarkMode} 
               hideAmounts={state.hideAmounts}
               onCategoryClick={(catId, m, y) => navigateToFilteredHistory(catId, m, y)}
+              onWalletClick={(walletId, m, y) => navigateToFilteredWalletHistory(walletId, m, y)}
             />
           </div>
         )}
